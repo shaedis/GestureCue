@@ -88,8 +88,8 @@ Long-term goal: feed GestureCue's processed video (camera + card overlays) into 
   Manual checklists in docs/ (MT/PA/OB/LIB/REC).
 - Caveats: thumb left/right directions were derived from code, not
   hardware — user verifies on camera; new .swift files must be registered
-  in the .xcodeproj or the build silently skips them; no git repo yet
-  (single live copy, nothing committed).
+  in the .xcodeproj or the build silently skips them. Repo initialized
+  2026-10-28; prompts/ + dev-process docs stay local via .gitignore.
 - Where to continue: the presenting flow is feature-complete. Open
   options: native virtual camera (heavy; may need a paid Apple signing
   identity), Phase 2 leftovers (low value — Top preset/appearance),

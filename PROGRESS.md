@@ -487,3 +487,10 @@ presenter output controls. Needs user go-ahead. Pipeline seam is ready
   or user-reported frictions from real services.
 - Housekeeping: no git repo exists. Recommend `git init` + first commit
   so resume never depends on one live working copy.
+
+### Repo (2026-10-28): git init + first public checkin
+
+- `main`, root commit 4a6b30b, 57 files. Ignored: prompts/,
+  instruction.md, old-ignore/, generated_images/, build/, coverage
+  artifacts, Xcode user state. Secrets grep clean. README refreshed
+  from milestone-1 staleness (v5 gestures, latch, catalog, recording).
