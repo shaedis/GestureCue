@@ -1,0 +1,638 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		100000000000000000000201 /* GestureCueApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000101 /* GestureCueApp.swift */; };
+		100000000000000000000202 /* HandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000102 /* HandGesture.swift */; };
+		100000000000000000000203 /* PresentationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000103 /* PresentationCard.swift */; };
+		100000000000000000000204 /* HandPose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000104 /* HandPose.swift */; };
+		100000000000000000000205 /* HandPoseDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000105 /* HandPoseDetector.swift */; };
+		100000000000000000000206 /* GestureClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000106 /* GestureClassifier.swift */; };
+		100000000000000000000207 /* GestureStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000107 /* GestureStateMachine.swift */; };
+		100000000000000000000208 /* GestureActionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000108 /* GestureActionRouter.swift */; };
+		100000000000000000000209 /* HandGestureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000109 /* HandGestureDetector.swift */; };
+		10000000000000000000021B /* FingerPaintController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* FingerPaintController.swift */; };
+		10000000000000000000020A /* VideoCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010A /* VideoCaptureService.swift */; };
+		10000000000000000000020B /* AVFoundationVideoCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010B /* AVFoundationVideoCaptureService.swift */; };
+		10000000000000000000020C /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010C /* CameraManager.swift */; };
+		10000000000000000000020D /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010D /* CameraPreviewView.swift */; };
+		10000000000000000000020E /* PresentationCardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010E /* PresentationCardStore.swift */; };
+		10000000000000000000020F /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010F /* AppViewModel.swift */; };
+		100000000000000000000210 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000110 /* ContentView.swift */; };
+		100000000000000000000211 /* CameraPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000111 /* CameraPanelView.swift */; };
+		100000000000000000000212 /* GestureControlPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000112 /* GestureControlPanelView.swift */; };
+		100000000000000000000213 /* PresentationCardPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000113 /* PresentationCardPanelView.swift */; };
+		100000000000000000000214 /* LandmarkOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000114 /* LandmarkOverlayView.swift */; };
+		100000000000000000000215 /* ProgramOutputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000115 /* ProgramOutputView.swift */; };
+		10000000000000000000021A /* OutputWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011A /* OutputWindowController.swift */; };
+		100000000000000000000216 /* VideoPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000116 /* VideoPipeline.swift */; };
+		100000000000000000000249 /* VideoRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000248 /* VideoRecorder.swift */; };
+		100000000000000000000217 /* CardOverlayCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000117 /* CardOverlayCompositor.swift */; };
+		100000000000000000000218 /* SampleBufferDisplayOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000118 /* SampleBufferDisplayOutput.swift */; };
+		100000000000000000000219 /* ProgramOutputPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000119 /* ProgramOutputPipeline.swift */; };
+		100000000000000000000230 /* GestureClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000130 /* GestureClassifierTests.swift */; };
+		100000000000000000000231 /* GestureStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000131 /* GestureStateMachineTests.swift */; };
+		100000000000000000000232 /* GestureActionRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000132 /* GestureActionRouterTests.swift */; };
+		100000000000000000000233 /* PresentationCardStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000133 /* PresentationCardStoreTests.swift */; };
+		100000000000000000000234 /* VideoPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000134 /* VideoPipelineTests.swift */; };
+		100000000000000000000236 /* FingerPaintControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000135 /* FingerPaintControllerTests.swift */; };
+		100000000000000000000237 /* HandGestureDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000136 /* HandGestureDetectorTests.swift */; };
+		100000000000000000000235 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 100000000000000000000022 /* XCTest.framework */; };
+		100000000000000000000240 /* sample-art-watch.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000140 /* sample-art-watch.jpg */; };
+		100000000000000000000241 /* sample-art-captions.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000141 /* sample-art-captions.jpg */; };
+		100000000000000000000242 /* sample-art-questions.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000142 /* sample-art-questions.jpg */; };
+		100000000000000000000243 /* sample-art-break.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000143 /* sample-art-break.jpg */; };
+		10000000000000000000021C /* Presentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011C /* Presentation.swift */; };
+		100000000000000000000247 /* CommandWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000246 /* CommandWindow.swift */; };
+		10000000000000000000021D /* PresentationLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011D /* PresentationLibrary.swift */; };
+		100000000000000000000245 /* Matteus6Deck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000244 /* Matteus6Deck.swift */; };
+		10000000000000000000021E /* PresentationImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011E /* PresentationImporter.swift */; };
+		100000000000000000000238 /* PresentationLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000137 /* PresentationLibraryTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		100000000000000000000015 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 100000000000000000000002;
+			remoteInfo = GestureCue;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		100000000000000000000020 /* GestureCue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GestureCue.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000021 /* GestureCueTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GestureCueTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000022 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		100000000000000000000101 /* GestureCueApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureCueApp.swift; sourceTree = "<group>"; };
+		100000000000000000000102 /* HandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGesture.swift; sourceTree = "<group>"; };
+		100000000000000000000103 /* PresentationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationCard.swift; sourceTree = "<group>"; };
+		100000000000000000000104 /* HandPose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandPose.swift; sourceTree = "<group>"; };
+		100000000000000000000105 /* HandPoseDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandPoseDetector.swift; sourceTree = "<group>"; };
+		100000000000000000000106 /* GestureClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureClassifier.swift; sourceTree = "<group>"; };
+		100000000000000000000107 /* GestureStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureStateMachine.swift; sourceTree = "<group>"; };
+		100000000000000000000108 /* GestureActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureActionRouter.swift; sourceTree = "<group>"; };
+		100000000000000000000109 /* HandGestureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetector.swift; sourceTree = "<group>"; };
+		10000000000000000000011B /* FingerPaintController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerPaintController.swift; sourceTree = "<group>"; };
+		10000000000000000000010A /* VideoCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCaptureService.swift; sourceTree = "<group>"; };
+		10000000000000000000010B /* AVFoundationVideoCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVFoundationVideoCaptureService.swift; sourceTree = "<group>"; };
+		10000000000000000000010C /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		10000000000000000000010D /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		10000000000000000000010E /* PresentationCardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationCardStore.swift; sourceTree = "<group>"; };
+		10000000000000000000010F /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		100000000000000000000110 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		100000000000000000000111 /* CameraPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPanelView.swift; sourceTree = "<group>"; };
+		100000000000000000000112 /* GestureControlPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureControlPanelView.swift; sourceTree = "<group>"; };
+		100000000000000000000113 /* PresentationCardPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationCardPanelView.swift; sourceTree = "<group>"; };
+		100000000000000000000114 /* LandmarkOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandmarkOverlayView.swift; sourceTree = "<group>"; };
+		100000000000000000000115 /* ProgramOutputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOutputView.swift; sourceTree = "<group>"; };
+		10000000000000000000011A /* OutputWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputWindowController.swift; sourceTree = "<group>"; };
+		100000000000000000000116 /* VideoPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPipeline.swift; sourceTree = "<group>"; };
+		100000000000000000000248 /* VideoRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecorder.swift; sourceTree = "<group>"; };
+		100000000000000000000117 /* CardOverlayCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOverlayCompositor.swift; sourceTree = "<group>"; };
+		100000000000000000000118 /* SampleBufferDisplayOutput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleBufferDisplayOutput.swift; sourceTree = "<group>"; };
+		100000000000000000000119 /* ProgramOutputPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOutputPipeline.swift; sourceTree = "<group>"; };
+		100000000000000000000130 /* GestureClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureClassifierTests.swift; sourceTree = "<group>"; };
+		100000000000000000000131 /* GestureStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureStateMachineTests.swift; sourceTree = "<group>"; };
+		100000000000000000000132 /* GestureActionRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureActionRouterTests.swift; sourceTree = "<group>"; };
+		100000000000000000000133 /* PresentationCardStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationCardStoreTests.swift; sourceTree = "<group>"; };
+		100000000000000000000134 /* VideoPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPipelineTests.swift; sourceTree = "<group>"; };
+		100000000000000000000135 /* FingerPaintControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerPaintControllerTests.swift; sourceTree = "<group>"; };
+		100000000000000000000136 /* HandGestureDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetectorTests.swift; sourceTree = "<group>"; };
+		100000000000000000000140 /* sample-art-watch.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-watch.jpg; sourceTree = "<group>"; };
+		100000000000000000000141 /* sample-art-captions.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-captions.jpg; sourceTree = "<group>"; };
+		100000000000000000000142 /* sample-art-questions.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-questions.jpg; sourceTree = "<group>"; };
+		100000000000000000000143 /* sample-art-break.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-break.jpg; sourceTree = "<group>"; };
+		10000000000000000000011C /* Presentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Presentation.swift; sourceTree = "<group>"; };
+		100000000000000000000246 /* CommandWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandWindow.swift; sourceTree = "<group>"; };
+		10000000000000000000011D /* PresentationLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationLibrary.swift; sourceTree = "<group>"; };
+		100000000000000000000244 /* Matteus6Deck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matteus6Deck.swift; sourceTree = "<group>"; };
+		10000000000000000000011E /* PresentationImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationImporter.swift; sourceTree = "<group>"; };
+		100000000000000000000137 /* PresentationLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationLibraryTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		100000000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		100000000000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000235 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100000000000000000000004 /* GestureCue */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000005 /* GestureCue */,
+				10000000000000000000000E /* GestureCueTests */,
+				10000000000000000000000F /* Products */,
+				100000000000000000000010 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000005 /* GestureCue */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000101 /* GestureCueApp.swift */,
+				100000000000000000000006 /* Models */,
+				100000000000000000000007 /* Vision */,
+				100000000000000000000008 /* Gestures */,
+				100000000000000000000009 /* Camera */,
+				10000000000000000000000A /* Cards */,
+				10000000000000000000000B /* ViewModels */,
+				10000000000000000000000D /* Output */,
+				10000000000000000000000C /* Views */,
+				10000000000000000000002B /* Resources */,
+			);
+			path = GestureCue;
+			sourceTree = "<group>";
+		};
+		100000000000000000000006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000102 /* HandGesture.swift */,
+				100000000000000000000103 /* PresentationCard.swift */,
+				10000000000000000000011C /* Presentation.swift */,
+				100000000000000000000246 /* CommandWindow.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		100000000000000000000007 /* Vision */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000104 /* HandPose.swift */,
+				100000000000000000000105 /* HandPoseDetector.swift */,
+			);
+			path = Vision;
+			sourceTree = "<group>";
+		};
+		100000000000000000000008 /* Gestures */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000106 /* GestureClassifier.swift */,
+				100000000000000000000107 /* GestureStateMachine.swift */,
+				100000000000000000000108 /* GestureActionRouter.swift */,
+				100000000000000000000109 /* HandGestureDetector.swift */,
+				10000000000000000000011B /* FingerPaintController.swift */,
+			);
+			path = Gestures;
+			sourceTree = "<group>";
+		};
+		100000000000000000000009 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000010A /* VideoCaptureService.swift */,
+				10000000000000000000010B /* AVFoundationVideoCaptureService.swift */,
+				10000000000000000000010C /* CameraManager.swift */,
+				10000000000000000000010D /* CameraPreviewView.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000A /* Cards */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000010E /* PresentationCardStore.swift */,
+				10000000000000000000011D /* PresentationLibrary.swift */,
+				10000000000000000000011E /* PresentationImporter.swift */,
+				100000000000000000000244 /* Matteus6Deck.swift */,
+			);
+			path = Cards;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				10000000000000000000010F /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000110 /* ContentView.swift */,
+				100000000000000000000111 /* CameraPanelView.swift */,
+				100000000000000000000112 /* GestureControlPanelView.swift */,
+				100000000000000000000113 /* PresentationCardPanelView.swift */,
+				100000000000000000000114 /* LandmarkOverlayView.swift */,
+				100000000000000000000115 /* ProgramOutputView.swift */,
+				10000000000000000000011A /* OutputWindowController.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		10000000000000000000002B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000140 /* sample-art-watch.jpg */,
+				100000000000000000000141 /* sample-art-captions.jpg */,
+				100000000000000000000142 /* sample-art-questions.jpg */,
+				100000000000000000000143 /* sample-art-break.jpg */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000D /* Output */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000116 /* VideoPipeline.swift */,
+				100000000000000000000117 /* CardOverlayCompositor.swift */,
+				100000000000000000000118 /* SampleBufferDisplayOutput.swift */,
+				100000000000000000000119 /* ProgramOutputPipeline.swift */,
+				100000000000000000000248 /* VideoRecorder.swift */,
+			);
+			path = Output;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000E /* GestureCueTests */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000130 /* GestureClassifierTests.swift */,
+				100000000000000000000131 /* GestureStateMachineTests.swift */,
+				100000000000000000000132 /* GestureActionRouterTests.swift */,
+				100000000000000000000133 /* PresentationCardStoreTests.swift */,
+				100000000000000000000134 /* VideoPipelineTests.swift */,
+				100000000000000000000135 /* FingerPaintControllerTests.swift */,
+				100000000000000000000136 /* HandGestureDetectorTests.swift */,
+				100000000000000000000137 /* PresentationLibraryTests.swift */,
+			);
+			path = GestureCueTests;
+			sourceTree = "<group>";
+		};
+		10000000000000000000000F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000020 /* GestureCue.app */,
+				100000000000000000000021 /* GestureCueTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		100000000000000000000010 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000022 /* XCTest.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		100000000000000000000002 /* GestureCue */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000018 /* Build configuration list for PBXNativeTarget "GestureCue" */;
+			buildPhases = (
+				100000000000000000000011 /* Sources */,
+				100000000000000000000012 /* Frameworks */,
+				10000000000000000000002A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GestureCue;
+			productName = "$(TARGET_NAME)";
+			productReference = 100000000000000000000020 /* GestureCue.app */;
+			productType = "com.apple.product-type.application";
+		};
+		100000000000000000000003 /* GestureCueTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000019 /* Build configuration list for PBXNativeTarget "GestureCueTests" */;
+			buildPhases = (
+				100000000000000000000013 /* Sources */,
+				100000000000000000000014 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				100000000000000000000016 /* PBXTargetDependency */,
+			);
+			name = GestureCueTests;
+			productName = "$(TARGET_NAME)";
+			productReference = 100000000000000000000021 /* GestureCueTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		100000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					100000000000000000000003 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 100000000000000000000002;
+					};
+				};
+			};
+			buildConfigurationList = 100000000000000000000017 /* Build configuration list for PBXProject "GestureCue" */;
+			compatibilityVersion = "Xcode 12.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 100000000000000000000004 /* GestureCue */;
+			productRefGroup = 10000000000000000000000F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				100000000000000000000002 /* GestureCue */,
+				100000000000000000000003 /* GestureCueTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		10000000000000000000002A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000240 /* sample-art-watch.jpg in Resources */,
+				100000000000000000000241 /* sample-art-captions.jpg in Resources */,
+				100000000000000000000242 /* sample-art-questions.jpg in Resources */,
+				100000000000000000000243 /* sample-art-break.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		100000000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000201 /* GestureCueApp.swift in Sources */,
+				100000000000000000000202 /* HandGesture.swift in Sources */,
+				100000000000000000000203 /* PresentationCard.swift in Sources */,
+				100000000000000000000204 /* HandPose.swift in Sources */,
+				100000000000000000000205 /* HandPoseDetector.swift in Sources */,
+				100000000000000000000206 /* GestureClassifier.swift in Sources */,
+				100000000000000000000207 /* GestureStateMachine.swift in Sources */,
+				100000000000000000000208 /* GestureActionRouter.swift in Sources */,
+				100000000000000000000209 /* HandGestureDetector.swift in Sources */,
+				10000000000000000000021B /* FingerPaintController.swift in Sources */,
+				10000000000000000000020A /* VideoCaptureService.swift in Sources */,
+				10000000000000000000020B /* AVFoundationVideoCaptureService.swift in Sources */,
+				10000000000000000000020C /* CameraManager.swift in Sources */,
+				10000000000000000000020D /* CameraPreviewView.swift in Sources */,
+				10000000000000000000020E /* PresentationCardStore.swift in Sources */,
+				10000000000000000000020F /* AppViewModel.swift in Sources */,
+				100000000000000000000210 /* ContentView.swift in Sources */,
+				100000000000000000000211 /* CameraPanelView.swift in Sources */,
+				100000000000000000000212 /* GestureControlPanelView.swift in Sources */,
+				100000000000000000000213 /* PresentationCardPanelView.swift in Sources */,
+				100000000000000000000214 /* LandmarkOverlayView.swift in Sources */,
+				100000000000000000000215 /* ProgramOutputView.swift in Sources */,
+				10000000000000000000021A /* OutputWindowController.swift in Sources */,
+				10000000000000000000021C /* Presentation.swift in Sources */,
+				100000000000000000000247 /* CommandWindow.swift in Sources */,
+				10000000000000000000021D /* PresentationLibrary.swift in Sources */,
+				10000000000000000000021E /* PresentationImporter.swift in Sources */,
+				100000000000000000000245 /* Matteus6Deck.swift in Sources */,
+				100000000000000000000216 /* VideoPipeline.swift in Sources */,
+				100000000000000000000249 /* VideoRecorder.swift in Sources */,
+				100000000000000000000217 /* CardOverlayCompositor.swift in Sources */,
+				100000000000000000000218 /* SampleBufferDisplayOutput.swift in Sources */,
+				100000000000000000000219 /* ProgramOutputPipeline.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		100000000000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000230 /* GestureClassifierTests.swift in Sources */,
+				100000000000000000000231 /* GestureStateMachineTests.swift in Sources */,
+				100000000000000000000232 /* GestureActionRouterTests.swift in Sources */,
+				100000000000000000000233 /* PresentationCardStoreTests.swift in Sources */,
+				100000000000000000000234 /* VideoPipelineTests.swift in Sources */,
+				100000000000000000000236 /* FingerPaintControllerTests.swift in Sources */,
+				100000000000000000000237 /* HandGestureDetectorTests.swift in Sources */,
+				100000000000000000000238 /* PresentationLibraryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		100000000000000000000016 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 100000000000000000000002 /* GestureCue */;
+			targetProxy = 100000000000000000000015 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		10000000000000000000001A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		10000000000000000000001B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		10000000000000000000001C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GestureCue;
+				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded.";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		10000000000000000000001D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GestureCue;
+				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded.";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		10000000000000000000001E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.appTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GestureCue.app/Contents/MacOS/GestureCue";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		1000000000000000000001F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.appTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GestureCue.app/Contents/MacOS/GestureCue";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		100000000000000000000017 /* Build configuration list for PBXProject "GestureCue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10000000000000000000001A /* Debug */,
+				10000000000000000000001B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		100000000000000000000018 /* Build configuration list for PBXNativeTarget "GestureCue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10000000000000000000001C /* Debug */,
+				10000000000000000000001D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		100000000000000000000019 /* Build configuration list for PBXNativeTarget "GestureCueTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10000000000000000000001E /* Debug */,
+				10000000000000000000001F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 100000000000000000000001 /* Project object */;
+}

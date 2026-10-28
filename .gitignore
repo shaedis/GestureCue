@@ -1,0 +1,15 @@
+.DS_Store
+build/
+DerivedData/
+*.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/
+
+# Dev-process docs stay local (not needed for the public repo).
+prompts/
+instruction.md
+old-ignore/
+
+# Scratch and tool artifacts.
+generated_images/
+*.profraw

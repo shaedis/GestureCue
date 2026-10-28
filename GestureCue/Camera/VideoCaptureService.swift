@@ -1,0 +1,58 @@
+import AVFoundation
+import CoreMedia
+import Foundation
+
+/// Lifecycle events from the shared camera capture pipeline.
+enum CaptureEvent: Sendable, Equatable {
+    case started(isPreviewMirrored: Bool)
+    case stopped
+    case failed(message: String)
+    case interrupted(message: String)
+    case interruptionEnded
+}
+
+/// Receives camera frames on the video queue. Consumers must be fast and
+/// non-blocking; use `alwaysDiscardsLateVideoFrames` semantics downstream by
+/// dropping work (not queueing) when busy.
+protocol VideoFrameConsumer: Sendable {
+    func consume(_ sampleBuffer: CMSampleBuffer)
+}
+
+/// The single shared camera capture pipeline feeding gesture recognition and
+/// video output. Implementations own an `AVCaptureSession`, fan frames out to
+/// consumers on a background video queue, and report lifecycle via `events`.
+protocol VideoCaptureService: Sendable {
+    /// Session driving the raw camera preview layer (zero-copy; not the program feed).
+    var session: AVCaptureSession { get }
+    var events: AsyncStream<CaptureEvent> { get }
+    /// Starts capture on `deviceID` (or the default camera when nil).
+    func start(deviceID: String?)
+    /// Stops capture and releases camera resources.
+    func stop()
+    /// Switches input device; takes effect immediately, even mid-capture.
+    func selectDevice(deviceID: String?)
+    /// Switches capture resolution; takes effect immediately, even mid-capture.
+    func selectResolution(_ resolution: CaptureResolution)
+}
+
+/// Capture/output resolution. 720p is the default; 1080p raises camera
+/// bandwidth and output sharpness. The compositor follows frame size, and
+/// gesture geometry is resolution-independent, so no consumer reconfigures.
+enum CaptureResolution: String, CaseIterable, Sendable {
+    case hd720
+    case hd1080
+
+    var displayName: String {
+        switch self {
+        case .hd720: "720p"
+        case .hd1080: "1080p"
+        }
+    }
+
+    var sessionPreset: AVCaptureSession.Preset {
+        switch self {
+        case .hd720: .hd1280x720
+        case .hd1080: .hd1920x1080
+        }
+    }
+}
