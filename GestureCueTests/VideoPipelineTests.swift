@@ -639,3 +639,161 @@ final class VideoRecorderTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 }
+
+// MARK: - Virtual Camera Service
+
+final class MockSinkTransport: VirtualCameraSinkTransport, @unchecked Sendable {
+    var connectResult = true
+    var sendResult = true
+    private let lock = NSLock()
+    private var connected = false
+    private var buffers: [CVPixelBuffer] = []
+
+    var isConnected: Bool { lock.withLock { connected } }
+    var sentCount: Int { lock.withLock { buffers.count } }
+    var lastSentSize: (Int, Int)? {
+        lock.withLock { buffers.last.map { (CVPixelBufferGetWidth($0), CVPixelBufferGetHeight($0)) } }
+    }
+
+    func connect() -> Bool {
+        lock.withLock { connected = connectResult }
+        return connectResult
+    }
+
+    func disconnect() { lock.withLock { connected = false } }
+
+    func send(_ pixelBuffer: CVPixelBuffer) -> Bool {
+        guard sendResult else { return false }
+        lock.withLock { buffers.append(pixelBuffer) }
+        return true
+    }
+}
+
+final class VirtualCameraServiceTests: XCTestCase {
+    private func makeBuffer(width: Int, height: Int) -> CVPixelBuffer {
+        var buffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, nil, &buffer
+        )
+        XCTAssertEqual(status, kCVReturnSuccess)
+        return buffer!
+    }
+
+    private func publish(to service: VirtualCameraService, width: Int, height: Int) {
+        service.publish(makeBuffer(width: width, height: height), presentationTimeStamp: .zero)
+    }
+
+    func testPublishBeforeStartSendsNothing() {
+        let transport = MockSinkTransport()
+        let service = VirtualCameraService(transport: transport)
+        publish(to: service, width: 1280, height: 720)
+        XCTAssertEqual(transport.sentCount, 0)
+    }
+
+    func testFailedConnectSendsNothing() {
+        let transport = MockSinkTransport()
+        transport.connectResult = false
+        let service = VirtualCameraService(transport: transport)
+        service.start()
+        publish(to: service, width: 1280, height: 720)
+        XCTAssertEqual(transport.sentCount, 0)
+    }
+
+    func test720pFramePassesThroughUnchanged() {
+        let transport = MockSinkTransport()
+        let service = VirtualCameraService(transport: transport)
+        service.start()
+        publish(to: service, width: 1280, height: 720)
+        XCTAssertEqual(transport.sentCount, 1)
+        XCTAssertEqual(transport.lastSentSize?.0, 1280)
+        XCTAssertEqual(transport.lastSentSize?.1, 720)
+    }
+
+    func test1080pFrameScalesTo720p() {
+        let transport = MockSinkTransport()
+        let service = VirtualCameraService(transport: transport)
+        service.start()
+        publish(to: service, width: 1920, height: 1080)
+        XCTAssertEqual(transport.sentCount, 1)
+        XCTAssertEqual(transport.lastSentSize?.0, 1280)
+        XCTAssertEqual(transport.lastSentSize?.1, 720)
+    }
+
+    func testScalerReturns720pInputIdentical() {
+        let scaler = VirtualCameraFrameScaler()
+        let buffer = makeBuffer(width: 1280, height: 720)
+        XCTAssertTrue(scaler.scaleToCameraSize(buffer) === buffer)
+    }
+
+    /// 1080p source with marker bands along the displayed top and right edges.
+    /// Memory row 0 is the displayed top; bands survive only when the full
+    /// frame is scaled (a bottom-left crop drops both, cutting card titles).
+    private func makeEdgeMarkedBuffer(width: Int, height: Int) -> CVPixelBuffer {
+        let buffer = makeBuffer(width: width, height: height)
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        let base = CVPixelBufferGetBaseAddress(buffer)!
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        for y in 0..<height {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in 0..<width {
+                let v: UInt8 = (y < height / 6 || x >= width * 5 / 6) ? 255 : 0
+                row[x * 4] = v
+                row[x * 4 + 1] = v
+                row[x * 4 + 2] = v
+                row[x * 4 + 3] = 255
+            }
+        }
+        return buffer
+    }
+
+    private func isBrightPixel(_ buffer: CVPixelBuffer, x: Int, y: Int) -> Bool {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        let base = CVPixelBufferGetBaseAddress(buffer)!
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+        return row[x * 4] > 200 && row[x * 4 + 1] > 200 && row[x * 4 + 2] > 200
+    }
+
+    func test1080pScalePreservesFullFrame() throws {
+        let scaler = VirtualCameraFrameScaler()
+        let source = makeEdgeMarkedBuffer(width: 1920, height: 1080)
+        let scaled = try XCTUnwrap(scaler.scaleToCameraSize(source))
+        XCTAssertEqual(CVPixelBufferGetWidth(scaled), 1280)
+        XCTAssertEqual(CVPixelBufferGetHeight(scaled), 720)
+        XCTAssertTrue(isBrightPixel(scaled, x: 640, y: 30), "top edge must survive scaling")
+        XCTAssertTrue(isBrightPixel(scaled, x: 1250, y: 360), "right edge must survive scaling")
+        XCTAssertFalse(isBrightPixel(scaled, x: 640, y: 360), "center must stay dark")
+    }
+
+    func testIsSinkConnectedTracksTransport() {
+        let transport = MockSinkTransport()
+        let service = VirtualCameraService(transport: transport)
+        XCTAssertFalse(service.isSinkConnected)
+        service.start()
+        XCTAssertTrue(service.isSinkConnected)
+        service.stop()
+        XCTAssertFalse(service.isSinkConnected)
+    }
+
+    func testIsSinkConnectedFalseWhenConnectFails() {
+        let transport = MockSinkTransport()
+        transport.connectResult = false
+        let service = VirtualCameraService(transport: transport)
+        service.start()
+        XCTAssertFalse(service.isSinkConnected)
+    }
+
+    func testStopDisconnectsAndDrops() {
+        let transport = MockSinkTransport()
+        let service = VirtualCameraService(transport: transport)
+        service.start()
+        publish(to: service, width: 1280, height: 720)
+        XCTAssertEqual(transport.sentCount, 1)
+        service.stop()
+        XCTAssertFalse(transport.isConnected)
+        publish(to: service, width: 1280, height: 720)
+        XCTAssertEqual(transport.sentCount, 1)
+    }
+}

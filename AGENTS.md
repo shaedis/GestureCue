@@ -95,3 +95,36 @@ Long-term goal: feed GestureCue's processed video (camera + card overlays) into 
   identity), Phase 2 leftovers (low value — Top preset/appearance),
   AI-generated cards (needs product decisions). Otherwise fix frictions
   from real services. Read PROGRESS.md tail for round-by-round evidence.
+
+## Branch virtual-camera (Build 36, 2026-10-29) — RESUME HERE
+
+`main` is the untouched A line (OBS output). All virtual-camera work is on
+branch `virtual-camera`, currently checked out and UNCOMMITTED (10 modified,
+5 new paths — commit before switching branches).
+
+- Done: CoreMediaIO camera extension target + host activation/sender/UI,
+  179/179 tests green, staged app deep-verified. Docs:
+  docs/VIRTUAL-CAMERA-SETUP.md (checklist VC-01..07).
+- Provisioning CLEARED 2026-10-29 14:37 (PLA + Xcode GUI registration).
+- Activation LIVE in Build 38, but Zoom showed only the slate: host log
+  proves findDevice never sees the device (Zoom does). Build 40 staged:
+  buffer-pointer reads, scan + AVFoundation logging, UID fallback,
+  stable device/stream UUIDs, extension v3. Post-reboot: activation live,
+  frames flowing, but Zoom cut the card on 1080p captures — scaler
+  rendered `bounds` as a source-region crop instead of scaling (Build 41
+  fix + regression test, 180/180 green unsandboxed, staged,
+  deep-verified). Build 42: Uninstall always reachable (was hidden when
+  device unpublished), honest Live label via sink-connected ticker,
+  182/182 green, staged. Current blocker: v3 staged but process never
+  launches while v2 pends uninstall; CLI uninstall SIP-blocked. Resume:
+  install Build 42, Uninstall → Enable (clients quit); if no process,
+  reboot (clears v2), Enable, Zoom verify FULL card; then VC-01..07,
+  commit + push (ask).
+- Branch learnings: extension embeds via absolute
+  `$(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)` (dstSubfolderSpec
+  16 is silently skipped); extension Info.plist must declare bundle
+  id/executable/version keys (static plists get no auto-generation); app
+  needs CODE_SIGN_ENTITLEMENTS set or the entitlement silently drops;
+  Makefile passes -allowProvisioningUpdates; Bundle.main lookups must use
+  absolute URLs; bump the build number with every staged fix so stale
+  instances are visible in the window title.

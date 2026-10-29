@@ -494,3 +494,173 @@ presenter output controls. Needs user go-ahead. Pipeline seam is ready
   instruction.md, old-ignore/, generated_images/, build/, coverage
   artifacts, Xcode user state. Secrets grep clean. README refreshed
   from milestone-1 staleness (v5 gestures, latch, catalog, recording).
+
+### Scope (branch virtual-camera, 2026-10-28): native virtual camera
+
+- Path: CoreMediaIO Camera Extension (Swift CMIOExtensionProvider/
+  Device/Stream sources) embedded in the app + host activation UI.
+  App streams IOSurface-backed composited buffers to the extension
+  (pool already IOSurface-backed). DAL plugins are dead (removed
+  macOS 15) — extension is the only viable route.
+- References: Apple "Creating a camera extension" doc, OBS PR #7777,
+  petehaughie/cameraextension, m96-chan/virtualcamera4mac.
+- BLOCKER QUESTION: extension loading requires validated signing —
+  outside the App Store that means Developer ID + notarization (paid
+  Apple account); ad-hoc will not activate, and the
+  `systemextensionsctl developer` shortcut needs SIP disabled.
+  Recommended next step if no paid account: minimal feasibility spike
+  (skeleton extension + activation attempt) before full build.
+- Entitlements: system-extension.install (host) + camera-extension
+  (extension); user enables once in System Settings (like OBS dance).
+
+## Branch virtual-camera — Build 34 (2026-10-28 session)
+
+Native CoreMediaIO virtual camera ("GestureCue Camera", 720p) implemented, all
+automated checks green. Manual activation (VC-01..07 in docs/VIRTUAL-CAMERA-SETUP.md)
+is the user's job: copy to /Applications, Enable, approve, reboot if asked.
+
+- Extension: GestureCueCameraExtension/ (provider/device/source+sink streams,
+  Info.plist, entitlements) wired as PBXNativeTarget + Embed System Extensions.
+- Host: SystemExtensionManager.swift (activation), VirtualCameraService.swift
+  (sink transport + 720p scaler + service), AppViewModel pipeline + status,
+  CameraPanelView Virtual Camera section.
+- Signing: Automatic, team X8YHS47G23; staged app passes codesign --verify --deep.
+- Tests: 179/179 pass incl. 6 new VirtualCameraServiceTests (drop/scale/passthrough/stop).
+- Build fixes this session: product filename = target name (not bundle ID),
+  embed via absolute $(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)
+  (dstSubfolderSpec 16 silently skipped), transportType Int 'virt', CoreText
+  placeholder keys (no AppKit in appex), withLock shadow rename.
+- NOT done: hardware activation verify, thumb-direction verify (carried over),
+  commit/push of this branch (left uncommitted for review).
+- Build 34 fix: embeddedExtensionIdentifier used a relative URL (FileManager
+  resolved it against $PWD, always "not found"). Now absolute via
+  bundleURL.appendingPathComponent. Build number bumped 33 -> 34.
+- Build 35 fix (real cause of "extension not found"): source Info.plist lacked
+  CFBundleIdentifier/Executable/Name/Version keys, so Bundle.bundleIdentifier
+  was nil. Added with $(...) build-setting expansion; verified built plist
+  resolves to com.gesturecue.app.cameraextension. Build 34's relative-URL fix
+  was also required. Build number 35.
+- Build 36 pending: app needs CODE_SIGN_ENTITLEMENTS (system-extension.install)
+  + provisioning profile. Blocked: Mac not registered in developer account.
+  Makefile now passes -allowProvisioningUpdates. Next: user builds once in
+  Xcode GUI to register the Mac, then `make app` works headless again.
+
+## Session end 2026-10-29 — resume checklist (branch virtual-camera, Build 36)
+
+State: extension + host + UI + 179 tests done; staged app deep-verified.
+AGENTS.md has a RESUME HERE section; setup doc troubleshooting updated.
+Work is UNCOMMITTED (7 modified incl. AGENTS.md/PROGRESS.md, 5 new).
+
+1. User: open GestureCue.xcodeproj in Xcode, ⌘B, accept Mac registration.
+2. Muse: `make app` unsandboxed, verify entitlement in signature.
+3. User: quit app, cp -R build/GestureCue.app /Applications/, check Build 36+ title.
+4. User: Enable Camera -> approve in System Settings -> reboot if asked -> VC-01..07.
+5. Commit + push branch (ask first), then verify "GestureCue Camera" in Zoom.
+
+## 2026-10-29 — provisioning blocked on PLA acceptance
+
+`make app` (Build 36, unsandboxed) fails: "PLA Update available: agree to the
+latest Program License Agreement in your developer account", hence no profile
+for com.gesturecue.app. User steps: (1) accept PLA at developer.apple.com,
+(2) Xcode GUI ⌘B to register the Mac, (3) tell Muse to rebuild. Build 35 on
+the user's machine still shows "Missing entitlement" — expected, it predates
+the CODE_SIGN_ENTITLEMENTS fix. README gained a Virtual Camera section.
+
+## 2026-10-29 — Build 36 staged, blocker cleared
+
+User accepted PLA + built once in Xcode GUI (Build Succeeded 14:37, Mac
+registered). Headless `make app` now succeeds: entitlement
+com.apple.developer.system-extension.install present in signature,
+codesign --deep OK. Xcode touched only the scheme version (1.7->1.8).
+Next: user re-copies to /Applications, checks Build 36 title, Enable ->
+approve -> reboot if asked -> VC-01..07.
+
+## 2026-10-29 — Build 37: activation-matching fixes (OBS reference)
+
+System error was "Extension not found in App bundle / unable to find any
+matched extension". Diffed OBS's working camera extension on this Mac:
+wrapper filename, executable, CFBundleName must equal CFBundleIdentifier,
+and CFBundlePackageType=SYSX is required, else sysextd won't match.
+Fixed: PRODUCT_NAME=com.gesturecue.app.cameraextension, SYSX added,
+mach service corrected to team+extension ID. Build succeeds, deep OK.
+
+## 2026-10-29 — Build 38: app-group fix for "extension category returned error"
+
+Activation reached sysextd (Build 37) but CMIO delegate rejected it:
+log showed validating_by_category -> uninstalling. Cause (confirmed by
+OBS on this Mac + independent reports): CMIOExtensionMachServiceName must
+be prefixed by one of the extension's App Groups; ours declared none.
+Fix: application-groups X8YHS47G23.com.gesturecue.app in both extension
+and host entitlements (mach name already group-prefixed, unchanged).
+Staged, groups verified in both signatures, deep OK.
+
+## 2026-10-29 — Build 39: sink discovery hardening + frame-path logging
+
+Zoom showed the slate (upside down): extension runs, host frames never
+arrive. Suspects: UID-based device match, source/sink order guessing.
+Fixes: device matched by CMIO object name (AVFoundation/UID path dropped),
+sink picked by controlled stream name (never falls through to source),
+sample duration 1/30 added, os_log on host connect/send and extension
+start/forward, slate text un-flipped. Extension CFBundleVersion 1->2 so
+macOS restages it. Staged sandboxed (cached profile), deep OK.
+Unit tests not re-run (need unsandboxed shell; change is hardware-path-only).
+
+## 2026-10-29 — Build 40: discovery diagnostics + UID fallback + stable IDs
+
+Host log proved findDevice never sees the device ("not present" every
+retry) while Zoom does. Build 40: guaranteed-correct buffer-pointer
+reads, scan logging (count + all names), AVFoundation cross-check dump,
+UID fallback path restored, stable device/stream UUIDs, extension v3.
+Sandboxed swiftc probe was inconclusive (HAL blocked in sandbox).
+Next: user reboots (clears v1-pending flux), re-copies, Build 40, Enable,
+Zoom check, paste frame-path log tail if still slate.
+
+## 2026-10-29 — Build 41: virtual-camera scaler cropped 1080p (Zoom card cut)
+
+User report (post-reboot, activation live): in-app Video output shows the
+full card, but Zoom shows the card cut/cropped — same moment, mirror off,
+live hide/show/next all working. Root cause in
+`VirtualCameraFrameScaler.scaleToCameraSize`: `CIContext.render(_:to:bounds:)`
+treats `bounds` as a source region, not a scale, so 1080p captures were
+sent as a bottom-left 1280x720 crop (top 360 px incl. card title + right
+640 px dropped). Fix: shrink the full frame with an affine transform
+before rendering (16:9 sources, no distortion). Regression test
+`test1080pScalePreservesFullFrame` (edge-marker bands) failed before
+(top+right edges dropped), passes after. Touched file left warning-free
+(.external rename, discarded buffer-pointer results, explicit CFString
+pointer formation — same runtime behavior). Suite: 180/180 green
+(unsandboxed). Build 40->41, staged, deep codesign OK, extension embedded.
+Next: user re-copies to /Applications, checks Build 41 title, Enable,
+Zoom verify full card at 1080p and 720p (720p was always passthrough).
+Outcome: Enable after re-copy went Live with NO reboot (v2
+`waiting to uninstall` line is harmless while v3 is active). Host-only
+updates = `make reinstall` + Enable, documented in
+docs/VIRTUAL-CAMERA-SETUP.md; reboot only on extension version bumps.
+
+## 2026-10-29 — Build 42: Uninstall reachability + honest Live label
+
+CORRECTION to the Build 41 outcome: "Live" only meant the activation
+handshake succeeded — the v3 process never launched (pgrep empty, no
+device in QuickTime/Zoom/CMIO/AVFoundation) while v2 sat `waiting to
+uninstall on reboot`. The `systemextensionsctl uninstall` CLI is SIP-
+blocked, and the in-app Uninstall button hid itself exactly in the
+"Not installed" state where it was the only reset path. Fixes:
+Uninstall always shown except mid-removal; new `isSinkConnected`
+flag + 1 s ticker so the panel reads "waiting for the camera device"
+until frames truly flow, then flips to Live on its own. Tests:
+182/182 green (2 new sink-connected tests). Staged, deep OK.
+Next: user installs Build 42, Uninstall (now visible) → Enable;
+if v3 still won't launch, reboot (pending v2 clears at boot).
+
+## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
+
+State: activation LIVE since Build 38; host-to-sink frames not yet flowing
+(host scan empty while Zoom sees the device). Build 40 staged with scan
+logging, UID fallback, stable IDs, extension v3. Work UNCOMMITTED.
+AGENTS.md has the current resume section; README troubleshooting is current.
+
+1. User: reboot the Mac (clears v1 "waiting to uninstall on reboot").
+2. User: quit app, cp -R build/GestureCue.app /Applications/, check Build 40.
+3. User: Enable Camera (re-approve if asked), restart Zoom, select camera.
+4. If live video: run VC-03/04/06/07. If slate: paste frame-path log tail,
+   Muse diagnoses from scan/AV/UID lines. Then commit + push branch (ask).

@@ -73,6 +73,10 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var lastRecordingURL: URL?
     @Published private(set) var recordingError: String?
     @Published private(set) var recordingDropped = 0
+    @Published private(set) var virtualCameraStatus: SystemExtensionStatus = .notInstalled
+    /// True once frames actually flow into the sink (status may read
+    /// active while the device is still unpublished).
+    @Published private(set) var virtualCameraStreaming = false
 
     var router: GestureActionRouter { GestureActionRouter(mapping: gestureMapping) }
 
@@ -87,6 +91,7 @@ final class AppViewModel: ObservableObject {
     private var cancellations = Set<AnyCancellable>()
     private var commandWindow = CommandWindow()
     private var windowTask: Task<Void, Never>?
+    private var virtualCameraTask: Task<Void, Never>?
     /// Listening-dot state burned into the program feed. Synced to the
     /// overlay only on transitions (appear/vanish/green→amber).
     private var lastDotState: DotState = .off
@@ -95,14 +100,18 @@ final class AppViewModel: ObservableObject {
     private var recordingTask: Task<Void, Never>?
     private var recordingStartDate: Date?
     private var programOutputWasEnabled = true
+    private var wantVirtualCamera = false
     private let outputWindow = OutputWindowController()
     private let importer = PresentationImporter()
     private let gestureDetector: HandGestureDetector
     private let recorder: VideoRecorder
+    private let virtualCameraService: VirtualCameraService
+    private let extensionManager: SystemExtensionManager
     private let paintController: FingerPaintController
     private let compositor: CardOverlayCompositor
     private let programPipeline: ProgramOutputPipeline
     private let expandedPipeline: ProgramOutputPipeline
+    private let virtualPipeline: ProgramOutputPipeline
 
     init() {
         let compositor = CardOverlayCompositor()
@@ -110,6 +119,8 @@ final class AppViewModel: ObservableObject {
         paintController.sink = { [compositor] layer in compositor.updatePaint(layer) }
         let gestureDetector = HandGestureDetector(paint: paintController)
         let recorder = VideoRecorder()
+        let virtualCameraService = VirtualCameraService(transport: CMIOVirtualCameraTransport())
+        let extensionManager = SystemExtensionManager()
         let programOutput = SampleBufferDisplayOutput()
         let programPipeline = ProgramOutputPipeline(compositor: compositor, output: programOutput)
         // Second output branch sharing the same compositor: feeds the expanded
@@ -117,10 +128,14 @@ final class AppViewModel: ObservableObject {
         let expandedOutput = SampleBufferDisplayOutput()
         let expandedPipeline = ProgramOutputPipeline(compositor: compositor, output: expandedOutput, enabled: false)
         programPipeline.setRecorder(recorder)
-        let capture = AVFoundationVideoCaptureService(consumers: [gestureDetector, programPipeline, expandedPipeline])
+        let virtualPipeline = ProgramOutputPipeline(compositor: compositor, output: virtualCameraService, enabled: false)
+        self.virtualPipeline = virtualPipeline
+        let capture = AVFoundationVideoCaptureService(consumers: [gestureDetector, programPipeline, expandedPipeline, virtualPipeline])
 
         self.gestureDetector = gestureDetector
         self.recorder = recorder
+        self.virtualCameraService = virtualCameraService
+        self.extensionManager = extensionManager
         self.paintController = paintController
         self.compositor = compositor
         self.programOutput = programOutput
@@ -161,6 +176,12 @@ final class AppViewModel: ObservableObject {
                 await MainActor.run { self?.handleRecordingFinish(result) }
             }
         }
+        extensionManager.onStatus = { [weak self] status in
+            Task { [weak self] in
+                await MainActor.run { self?.handleExtensionStatus(status) }
+            }
+        }
+        virtualCameraStatus = CMIOVirtualCameraTransport.devicePresent() ? .installed : .notInstalled
         camera.$status
             .sink { [weak self] status in
                 Task { [weak self] in
@@ -474,6 +495,78 @@ final class AppViewModel: ObservableObject {
                     self.lastDotState = dot
                     self.syncOverlay()
                 }
+            }
+        }
+    }
+
+    // MARK: - Virtual Camera
+
+    func setVirtualCameraEnabled(_ enabled: Bool) {
+        wantVirtualCamera = enabled
+        if enabled {
+            guard let id = SystemExtensionManager.embeddedExtensionIdentifier() else {
+                virtualCameraStatus = .failed("Camera extension not found in this app bundle.")
+                return
+            }
+            extensionManager.activate(extensionIdentifier: id)
+        } else {
+            stopVirtualCameraStream()
+            virtualCameraStatus = CMIOVirtualCameraTransport.devicePresent() ? .installed : .notInstalled
+        }
+    }
+
+    func uninstallVirtualCamera() {
+        stopVirtualCameraStream()
+        guard let id = SystemExtensionManager.embeddedExtensionIdentifier() else {
+            virtualCameraStatus = .notInstalled
+            return
+        }
+        extensionManager.deactivate(extensionIdentifier: id)
+    }
+
+    func openExtensionSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func handleExtensionStatus(_ status: SystemExtensionStatus) {
+        switch status {
+        case .active:
+            if wantVirtualCamera {
+                virtualPipeline.setEnabled(true)
+                virtualCameraService.start()
+                virtualCameraStatus = .active
+                virtualCameraStreaming = virtualCameraService.isSinkConnected
+                startVirtualCameraTicker()
+            } else {
+                virtualCameraStatus = .installed
+            }
+        case .notInstalled:
+            stopVirtualCameraStream()
+            virtualCameraStatus = .notInstalled
+        default:
+            virtualCameraStatus = status
+        }
+    }
+
+    private func stopVirtualCameraStream() {
+        virtualCameraTask?.cancel()
+        virtualCameraTask = nil
+        virtualCameraStreaming = false
+        virtualPipeline.setEnabled(false)
+        virtualCameraService.stop()
+    }
+
+    /// Polls sink connectivity while active: the label flips to Live the
+    /// moment the device publishes, with no app restart needed.
+    private func startVirtualCameraTicker() {
+        virtualCameraTask?.cancel()
+        virtualCameraTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                self.virtualCameraStreaming = self.virtualCameraService.isSinkConnected
             }
         }
     }
