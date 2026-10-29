@@ -712,6 +712,13 @@ motion). Resume: VC-01..07 checklist → merge to main (ask) → optional
 HAL-refresh improvement. AGENTS.md holds the resume state; this log
 holds the round-by-round evidence above.
 
+## 2026-10-29 — Merge to main (Build 45)
+
+Merged `virtual-camera` into `main` with --no-ff (2f1eb36), no
+conflicts; docs synced on top (AGENTS/README now describe main as
+including the camera). Tag `main-build-45` marks the merge line.
+Branch `virtual-camera` kept alive and synced for continued work.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

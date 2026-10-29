@@ -86,9 +86,9 @@ pinch thumb + index and drag to paint on the card (Undo/Redo/Clear included).
 On a picture card, spread or pinch thumb + index (with the thumb raised) to
 zoom the picture from the camera.
 
-## Virtual camera (branch `virtual-camera`)
+## Virtual camera
 
-On this branch GestureCue also publishes its composited feed as a native
+GestureCue also publishes its composited feed as a native
 **“GestureCue Camera”** (720p) that Zoom and Teams can select directly — no
 OBS needed. This requires a paid Apple developer team for signing (team
 `X8YHS47G23`), macOS approval of the system extension, and the app in
@@ -218,17 +218,16 @@ frames). Camera/Zoom behavior additionally needs the manual checklists in
   or extreme camera angles may misclassify (reported as Unknown, never a guess).
 - Thumb left/right directions were derived from code rather than hardware —
   verify on camera (see MT-10 in the Phase 1 checklist).
-- `main` has no virtual camera yet: Zoom/Teams integration there goes through
-  OBS capturing the output window (see above). This branch adds the native
-  camera (see Virtual camera above) — verified working on camera; merge
-  pending the VC-01..07 checklist.
+- Zoom/Teams integration works two ways: the native virtual camera (see
+  Virtual camera above, verified working on camera), or OBS capturing
+  the output window (see above) as a fallback.
 - Sample cards are hand-written; no AI generation or speech recognition.
 
 ## Roadmap
 
-1. **Virtual camera:** working on branch `virtual-camera`
+1. **Virtual camera:** working and merged to `main`
    (CoreMediaIO camera extension behind the `VideoOutputService` seam,
    verified on camera in Zoom + QuickTime); remaining: VC-01..07
-   checklist, then merge to `main`.
+   checklist. Continued work happens on branch `virtual-camera`.
 2. **AI-assisted cards:** short accessible message generation, kept out by
    design until a milestone spec covers the service and privacy story.

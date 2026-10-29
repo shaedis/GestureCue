@@ -96,11 +96,12 @@ Long-term goal: feed GestureCue's processed video (camera + card overlays) into 
   AI-generated cards (needs product decisions). Otherwise fix frictions
   from real services. Read PROGRESS.md tail for round-by-round evidence.
 
-## Branch virtual-camera (Build 45, 2026-10-29) — RESUME HERE
+## Virtual camera (merged to main, Build 45, 2026-10-29) — RESUME HERE
 
-`main` is the untouched A line (OBS output). All virtual-camera work is on
-branch `virtual-camera` (checked out, tree clean). HEAD 3ccca10, pushed;
-tags `virtual-camera-works` (Build 42) and `virtual-camera-build-45`.
+`main` includes the native virtual camera (merge 2f1eb36, tag
+`main-build-45`). Branch `virtual-camera` stays alive for continued
+work and is currently synced to `main`. Tags `virtual-camera-works`
+(Build 42) and `virtual-camera-build-45` mark the verified milestones.
 
 - State: native virtual camera WORKING and user-verified on camera in
   Zoom + QuickTime (Build 42→45): full card (title/message/picture) at
@@ -110,11 +111,12 @@ tags `virtual-camera-works` (Build 42) and `virtual-camera-build-45`.
   (unsandboxed), staged app deep-verified.
 - Docs: docs/VIRTUAL-CAMERA-SETUP.md (VC-01..07 checklist), README
   Virtual camera + troubleshooting (current), PROGRESS.md tail.
-- Next, in order: (1) user runs VC-01..07 checklist; (2) merge
-  `virtual-camera` → `main` (ask first); (3) open improvements, all
-  optional: per-process HAL refresh so Enable-after-staging works
-  without an app restart; motion-gesture triggers — user said WAIT,
-  advised against (signing is motion; still-holds only).
+- Next, in order: (1) user runs VC-01..07 checklist; (2) open
+  improvements, all optional: per-process HAL refresh so
+  Enable-after-staging works without an app restart; motion-gesture
+  triggers — user said WAIT, advised against (signing is motion;
+  still-holds only). Continue feature work on `virtual-camera`,
+  merge to `main` when verified (ask first).
 - Machine state (user's Mac): extension v3 active with a fresh staging;
   older `waiting to uninstall on reboot` generations are inert and clear
   at the next reboot. User's app: /Applications copy at Build 45.
