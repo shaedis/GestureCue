@@ -86,10 +86,21 @@ struct PaintStroke: Sendable, Equatable {
     var points: [CGPoint]
 }
 
+/// Two-finger brush stroke: drawn while the fingers move, then fades away
+/// instead of persisting. The fade clock starts at `endedAt` (nil while
+/// still drawing); each stroke carries its own duration so the compositor
+/// needs no shared clock.
+struct BrushStroke: Sendable, Equatable {
+    var stroke: PaintStroke
+    var endedAt: Date? = nil
+    var fadeDuration: TimeInterval = 1.5
+}
+
 /// Paint layer composited over the card: committed + active strokes plus the
 /// live fingertip pointer. Coordinates are normalized video space.
 struct PaintLayer: Sendable, Equatable {
     var strokes: [PaintStroke] = []
+    var brushStrokes: [BrushStroke] = []
     var pointer: CGPoint? = nil
     var pointerColor: HighlightColor = .yellow
 }

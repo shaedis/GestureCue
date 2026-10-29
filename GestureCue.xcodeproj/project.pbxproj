@@ -53,6 +53,13 @@
 		100000000000000000000245 /* Matteus6Deck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000244 /* Matteus6Deck.swift */; };
 		10000000000000000000021E /* PresentationImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011E /* PresentationImporter.swift */; };
 		100000000000000000000238 /* PresentationLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000137 /* PresentationLibraryTests.swift */; };
+		100000000000000000000261 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000251 /* main.swift */; };
+		100000000000000000000262 /* CameraExtensionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000252 /* CameraExtensionProvider.swift */; };
+		100000000000000000000263 /* CameraExtensionDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000253 /* CameraExtensionDevice.swift */; };
+		100000000000000000000264 /* CameraExtensionStreams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000254 /* CameraExtensionStreams.swift */; };
+		100000000000000000000265 /* com.gesturecue.app.cameraextension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = 100000000000000000000250 /* com.gesturecue.app.cameraextension.systemextension */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		100000000000000000000266 /* SystemExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000258 /* SystemExtensionManager.swift */; };
+		100000000000000000000267 /* VirtualCameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000259 /* VirtualCameraService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +121,16 @@
 		100000000000000000000244 /* Matteus6Deck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matteus6Deck.swift; sourceTree = "<group>"; };
 		10000000000000000000011E /* PresentationImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationImporter.swift; sourceTree = "<group>"; };
 		100000000000000000000137 /* PresentationLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationLibraryTests.swift; sourceTree = "<group>"; };
+		100000000000000000000250 /* com.gesturecue.app.cameraextension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.gesturecue.app.cameraextension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000251 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		100000000000000000000252 /* CameraExtensionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraExtensionProvider.swift; sourceTree = "<group>"; };
+		100000000000000000000253 /* CameraExtensionDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraExtensionDevice.swift; sourceTree = "<group>"; };
+		100000000000000000000254 /* CameraExtensionStreams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraExtensionStreams.swift; sourceTree = "<group>"; };
+		100000000000000000000255 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		100000000000000000000256 /* GestureCueCameraExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = GestureCueCameraExtension.entitlements; sourceTree = "<group>"; };
+		100000000000000000000257 /* GestureCue.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = GestureCue.entitlements; sourceTree = "<group>"; };
+		100000000000000000000258 /* SystemExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemExtensionManager.swift; sourceTree = "<group>"; };
+		100000000000000000000259 /* VirtualCameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualCameraService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +149,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		100000000000000000000269 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -142,6 +166,7 @@
 				10000000000000000000000E /* GestureCueTests */,
 				10000000000000000000000F /* Products */,
 				100000000000000000000010 /* Frameworks */,
+				100000000000000000000260 /* GestureCueCameraExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -158,6 +183,7 @@
 				10000000000000000000000D /* Output */,
 				10000000000000000000000C /* Views */,
 				10000000000000000000002B /* Resources */,
+				100000000000000000000257 /* GestureCue.entitlements */,
 			);
 			path = GestureCue;
 			sourceTree = "<group>";
@@ -256,6 +282,8 @@
 				100000000000000000000117 /* CardOverlayCompositor.swift */,
 				100000000000000000000118 /* SampleBufferDisplayOutput.swift */,
 				100000000000000000000119 /* ProgramOutputPipeline.swift */,
+				100000000000000000000258 /* SystemExtensionManager.swift */,
+				100000000000000000000259 /* VirtualCameraService.swift */,
 				100000000000000000000248 /* VideoRecorder.swift */,
 			);
 			path = Output;
@@ -281,6 +309,7 @@
 			children = (
 				100000000000000000000020 /* GestureCue.app */,
 				100000000000000000000021 /* GestureCueTests.xctest */,
+				100000000000000000000250 /* com.gesturecue.app.cameraextension.systemextension */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -293,6 +322,19 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		100000000000000000000260 /* GestureCueCameraExtension */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000251 /* main.swift */,
+				100000000000000000000252 /* CameraExtensionProvider.swift */,
+				100000000000000000000253 /* CameraExtensionDevice.swift */,
+				100000000000000000000254 /* CameraExtensionStreams.swift */,
+				100000000000000000000255 /* Info.plist */,
+				100000000000000000000256 /* GestureCueCameraExtension.entitlements */,
+			);
+			path = GestureCueCameraExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -303,10 +345,12 @@
 				100000000000000000000011 /* Sources */,
 				100000000000000000000012 /* Frameworks */,
 				10000000000000000000002A /* Resources */,
+				100000000000000000000271 /* Embed System Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				100000000000000000000273 /* PBXTargetDependency */,
 			);
 			name = GestureCue;
 			productName = "$(TARGET_NAME)";
@@ -329,6 +373,23 @@
 			productName = "$(TARGET_NAME)";
 			productReference = 100000000000000000000021 /* GestureCueTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		100000000000000000000274 /* GestureCueCameraExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000277 /* Build configuration list for PBXNativeTarget "GestureCueCameraExtension" */;
+			buildPhases = (
+				100000000000000000000268 /* Sources */,
+				100000000000000000000269 /* Frameworks */,
+				100000000000000000000270 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GestureCueCameraExtension;
+			productName = GestureCueCameraExtension;
+			productReference = 100000000000000000000250 /* com.gesturecue.app.cameraextension.systemextension */;
+			productType = "com.apple.product-type.system-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -359,6 +420,7 @@
 			targets = (
 				100000000000000000000002 /* GestureCue */,
 				100000000000000000000003 /* GestureCueTests */,
+				100000000000000000000274 /* GestureCueCameraExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -372,6 +434,13 @@
 				100000000000000000000241 /* sample-art-captions.jpg in Resources */,
 				100000000000000000000242 /* sample-art-questions.jpg in Resources */,
 				100000000000000000000243 /* sample-art-break.jpg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		100000000000000000000270 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,6 +484,8 @@
 				100000000000000000000217 /* CardOverlayCompositor.swift in Sources */,
 				100000000000000000000218 /* SampleBufferDisplayOutput.swift in Sources */,
 				100000000000000000000219 /* ProgramOutputPipeline.swift in Sources */,
+				100000000000000000000266 /* SystemExtensionManager.swift in Sources */,
+				100000000000000000000267 /* VirtualCameraService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,6 +504,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		100000000000000000000268 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000261 /* main.swift in Sources */,
+				100000000000000000000262 /* CameraExtensionProvider.swift in Sources */,
+				100000000000000000000263 /* CameraExtensionDevice.swift in Sources */,
+				100000000000000000000264 /* CameraExtensionStreams.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -441,7 +523,32 @@
 			target = 100000000000000000000002 /* GestureCue */;
 			targetProxy = 100000000000000000000015 /* PBXContainerItemProxy */;
 		};
+		100000000000000000000272 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 100000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 100000000000000000000274;
+			remoteInfo = GestureCueCameraExtension;
+		};
+		100000000000000000000273 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 100000000000000000000274 /* GestureCueCameraExtension */;
+			targetProxy = 100000000000000000000272 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
+/* Begin PBXCopyFilesBuildPhase section */
+		100000000000000000000271 /* Embed System Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 0;
+			files = (
+				100000000000000000000265 /* com.gesturecue.app.cameraextension.systemextension in Embed System Extensions */,
+			);
+			name = "Embed System Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		10000000000000000000001A /* Debug */ = {
@@ -521,13 +628,15 @@
 		10000000000000000000001C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = GestureCue/GestureCue.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X8YHS47G23;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = GestureCue;
-				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded. Virtual camera output is available to other apps on this Mac only when you enable it.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -542,13 +651,15 @@
 		10000000000000000000001D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = GestureCue/GestureCue.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X8YHS47G23;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = GestureCue;
-				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "GestureCue uses the camera to detect hand gestures that control presentation cards. Video is processed on-device and never recorded or uploaded. Virtual camera output is available to other apps on this Mac only when you enable it.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -602,6 +713,38 @@
 			};
 			name = Release;
 		};
+		100000000000000000000275 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = GestureCueCameraExtension/GestureCueCameraExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = X8YHS47G23;
+				INFOPLIST_FILE = GestureCueCameraExtension/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.app.cameraextension;
+				PRODUCT_NAME = com.gesturecue.app.cameraextension;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		100000000000000000000276 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = GestureCueCameraExtension/GestureCueCameraExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = X8YHS47G23;
+				INFOPLIST_FILE = GestureCueCameraExtension/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gesturecue.app.cameraextension;
+				PRODUCT_NAME = com.gesturecue.app.cameraextension;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -628,6 +771,15 @@
 			buildConfigurations = (
 				10000000000000000000001E /* Debug */,
 				10000000000000000000001F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		100000000000000000000277 /* Build configuration list for PBXNativeTarget "GestureCueCameraExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				100000000000000000000275 /* Debug */,
+				100000000000000000000276 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

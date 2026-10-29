@@ -392,3 +392,115 @@ final class PinchZoomHoldTests: XCTestCase {
         XCTAssertFalse(decision.suppressStatic)
     }
 }
+
+final class BrushStrokeTests: XCTestCase {
+    private let brushFingers = [true, true, false, false]
+
+    /// Two-finger pose: brush tip is the midpoint of the two tips.
+    private func brushPose(indexTip: SIMD2<Float>, middleTip: SIMD2<Float>, confidence: Float = 0.95) -> HandPose {
+        HandPose(
+            points: [.indexTip: indexTip, .middleTip: middleTip],
+            confidences: [.indexTip: confidence, .middleTip: confidence]
+        )
+    }
+
+    private func brushedController(fade: TimeInterval = 1.5) -> (FingerPaintController, LayersBox) {
+        var config = FingerPaintConfig()
+        config.brushFadeDuration = fade
+        let paint = FingerPaintController(config: config)
+        let box = LayersBox()
+        paint.sink = { box.layers.append($0) }
+        return (paint, box)
+    }
+
+    func testBrushTipIsMidpointOfTwoTips() {
+        let tip = FingerPaintController.brushTip(
+            of: brushPose(indexTip: SIMD2(0.4, 0.5), middleTip: SIMD2(0.6, 0.5)),
+            minJointConfidence: 0.3
+        )
+        XCTAssertEqual(tip?.x ?? -1, 0.5, accuracy: 0.001)
+        XCTAssertEqual(tip?.y ?? -1, 0.5, accuracy: 0.001)
+    }
+
+    func testBrushTipNilWhenWeak() {
+        XCTAssertNil(FingerPaintController.brushTip(
+            of: brushPose(indexTip: SIMD2(0.4, 0.5), middleTip: SIMD2(0.6, 0.5), confidence: 0.1),
+            minJointConfidence: 0.3
+        ))
+        XCTAssertNil(FingerPaintController.brushTip(of: nil, minJointConfidence: 0.3))
+    }
+
+    func testBrushEngagesAndDrawsWhileMoving() {
+        let (paint, box) = brushedController()
+        let fingers = brushFingers
+        XCTAssertTrue(paint.updateBrush(pose: brushPose(indexTip: SIMD2(0.4, 0.5), middleTip: SIMD2(0.44, 0.5)), fingers: fingers))
+        XCTAssertTrue(paint.updateBrush(pose: brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5)), fingers: fingers))
+        XCTAssertTrue(paint.updateBrush(pose: brushPose(indexTip: SIMD2(0.6, 0.5), middleTip: SIMD2(0.64, 0.5)), fingers: fingers))
+        let strokes = box.layers.last?.brushStrokes ?? []
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertGreaterThanOrEqual(strokes.first?.stroke.points.count ?? 0, 3)
+        XCTAssertNil(strokes.first?.endedAt, "live stroke has no end date")
+        XCTAssertNotNil(box.layers.last?.pointer, "brush pointer aims the stroke")
+    }
+
+    func testBrushDrawsVerticallyToo() {
+        let (paint, box) = brushedController()
+        let fingers = brushFingers
+        XCTAssertTrue(paint.updateBrush(pose: brushPose(indexTip: SIMD2(0.5, 0.4), middleTip: SIMD2(0.54, 0.4)), fingers: fingers))
+        XCTAssertTrue(paint.updateBrush(pose: brushPose(indexTip: SIMD2(0.5, 0.6), middleTip: SIMD2(0.54, 0.6)), fingers: fingers))
+        XCTAssertGreaterThanOrEqual(box.layers.last?.brushStrokes.first?.stroke.points.count ?? 0, 2)
+    }
+
+    func testBrushIgnoresOtherPoses() {
+        let (paint, box) = brushedController()
+        let pose = brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5))
+        for fingers in [[true, false, false, false], [true, true, true, false], [false, false, false, false], []] {
+            XCTAssertFalse(paint.updateBrush(pose: pose, fingers: fingers), "must not engage on \(fingers)")
+        }
+        XCTAssertTrue(box.layers.allSatisfy { $0.brushStrokes.isEmpty })
+    }
+
+    func testBrushAndZoomNeverEngageTogether() {
+        var brush = BrushStrokeTracker()
+        var gate = ZoomHandGate()
+        let tip = SIMD2<Float>(0.5, 0.5)
+        let patterns: [[Bool]] = [
+            [true, false, false, false], [true, true, false, false],
+            [true, true, true, false], [false, false, false, false],
+        ]
+        for fingers in patterns {
+            let brushOn = brush.update(fingers: fingers, tip: tip, smoothing: 0.4) != nil
+            let zoomOn = gate.update(fingers: fingers, thumbHeight: 0.8).engaged
+            XCTAssertFalse(brushOn && zoomOn, "mutually exclusive on \(fingers)")
+        }
+    }
+
+    func testEndedStrokeSurvivesDuringFade() {
+        let (paint, box) = brushedController()
+        XCTAssertTrue(paint.updateBrush(
+            pose: brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5)), fingers: brushFingers
+        ))
+        XCTAssertFalse(paint.updateBrush(pose: nil, fingers: []), "hand lost ends the stroke")
+        let strokes = box.layers.last?.brushStrokes ?? []
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertNotNil(strokes.first?.endedAt, "ended stroke kept while fading")
+    }
+
+    func testExpiredStrokeIsPruned() {
+        let (paint, box) = brushedController(fade: 0)
+        XCTAssertTrue(paint.updateBrush(
+            pose: brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5)), fingers: brushFingers
+        ))
+        XCTAssertFalse(paint.updateBrush(pose: nil, fingers: []))
+        XCTAssertTrue(box.layers.last?.brushStrokes.isEmpty ?? false, "zero fade prunes on release")
+    }
+
+    func testCardSwitchClearsBrush() {
+        let (paint, box) = brushedController()
+        XCTAssertTrue(paint.updateBrush(
+            pose: brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5)), fingers: brushFingers
+        ))
+        paint.setCurrentCard(UUID())
+        XCTAssertTrue(box.layers.last?.brushStrokes.isEmpty ?? false, "remnants must not leak onto another card")
+    }
+}

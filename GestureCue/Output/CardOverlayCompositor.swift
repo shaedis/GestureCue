@@ -122,10 +122,20 @@ final class CardOverlayCompositor: VideoCompositor, @unchecked Sendable {
         }
     }
 
-    /// Draws committed + active strokes (clipped to the card, only when the
-    /// card is visible) and the live fingertip pointer.
+    /// Brush fade curve: full alpha while drawing (nil end), linear fade
+    /// after release, gone at the end of the duration. Pure for testing;
+    /// the draw path passes the current time.
+    static func brushAlpha(endedAt: Date?, at now: Date, fadeDuration: TimeInterval) -> Double {
+        guard let endedAt else { return 1 }
+        guard fadeDuration > 0 else { return 0 }
+        return max(0, 1 - now.timeIntervalSince(endedAt) / fadeDuration)
+    }
+
+    /// Draws committed + active paint strokes and fading brush strokes
+    /// (clipped to the card, only when the card is visible) plus the live
+    /// fingertip pointer.
     private func drawPaintLocked(layer: PaintLayer, cardVisible: Bool, position: CardOverlayPosition, expanded: Bool, into buffer: CVPixelBuffer) {
-        guard layer.pointer != nil || (cardVisible && !layer.strokes.isEmpty) else { return }
+        guard layer.pointer != nil || (cardVisible && (!layer.strokes.isEmpty || !layer.brushStrokes.isEmpty)) else { return }
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
         guard let base = CVPixelBufferGetBaseAddress(buffer) else { return }
@@ -148,20 +158,22 @@ final class CardOverlayCompositor: VideoCompositor, @unchecked Sendable {
             return CGPoint(x: x * w, y: p.y * h)
         }
 
-        if cardVisible, !layer.strokes.isEmpty {
+        if cardVisible, !layer.strokes.isEmpty || !layer.brushStrokes.isEmpty {
             ctx.saveGState()
             ctx.clip(to: Self.cardRect(width: width, height: height, position: position, expanded: expanded))
             ctx.setLineCap(.round)
             ctx.setLineJoin(.round)
             ctx.setLineWidth(max(3, h * 0.008))
-            for stroke in layer.strokes {
+            func draw(_ stroke: PaintStroke, alpha: CGFloat) {
+                let base = stroke.color.markerColor
+                let color = alpha >= 1 ? base : (base.copy(alpha: alpha) ?? base)
                 if stroke.points.count == 1, let dot = stroke.points.first {
                     let c = pixel(dot)
                     let r = max(2, h * 0.006)
-                    ctx.setFillColor(stroke.color.markerColor)
+                    ctx.setFillColor(color)
                     ctx.fillEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
                 } else if stroke.points.count > 1 {
-                    ctx.setStrokeColor(stroke.color.markerColor)
+                    ctx.setStrokeColor(color)
                     let path = CGMutablePath()
                     path.move(to: pixel(stroke.points[0]))
                     for point in stroke.points.dropFirst() {
@@ -170,6 +182,15 @@ final class CardOverlayCompositor: VideoCompositor, @unchecked Sendable {
                     ctx.addPath(path)
                     ctx.strokePath()
                 }
+            }
+            for stroke in layer.strokes {
+                draw(stroke, alpha: 1)
+            }
+            let now = Date()
+            for brush in layer.brushStrokes {
+                let alpha = Self.brushAlpha(endedAt: brush.endedAt, at: now, fadeDuration: brush.fadeDuration)
+                guard alpha > 0 else { continue }
+                draw(brush.stroke, alpha: CGFloat(alpha))
             }
             ctx.restoreGState()
         }

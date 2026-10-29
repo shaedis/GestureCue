@@ -95,3 +95,46 @@ Long-term goal: feed GestureCue's processed video (camera + card overlays) into 
   identity), Phase 2 leftovers (low value — Top preset/appearance),
   AI-generated cards (needs product decisions). Otherwise fix frictions
   from real services. Read PROGRESS.md tail for round-by-round evidence.
+
+## Branch virtual-camera (Build 45, 2026-10-29) — RESUME HERE
+
+`main` is the untouched A line (OBS output). All virtual-camera work is on
+branch `virtual-camera` (checked out, tree clean). HEAD 3ccca10, pushed;
+tags `virtual-camera-works` (Build 42) and `virtual-camera-build-45`.
+
+- State: native virtual camera WORKING and user-verified on camera in
+  Zoom + QuickTime (Build 42→45): full card (title/message/picture) at
+  720p and 1080p, 1080p capture default with Center Stage off (stable
+  wide frame), configurable trigger timing (0.2–2.0 s hold slider),
+  two-finger fading brush on cards (1.5 s fade). 199/199 XCTest green
+  (unsandboxed), staged app deep-verified.
+- Docs: docs/VIRTUAL-CAMERA-SETUP.md (VC-01..07 checklist), README
+  Virtual camera + troubleshooting (current), PROGRESS.md tail.
+- Next, in order: (1) user runs VC-01..07 checklist; (2) merge
+  `virtual-camera` → `main` (ask first); (3) open improvements, all
+  optional: per-process HAL refresh so Enable-after-staging works
+  without an app restart; motion-gesture triggers — user said WAIT,
+  advised against (signing is motion; still-holds only).
+- Machine state (user's Mac): extension v3 active with a fresh staging;
+  older `waiting to uninstall on reboot` generations are inert and clear
+  at the next reboot. User's app: /Applications copy at Build 45.
+- If the device ever goes missing again: quit camera clients →
+  Uninstall → Enable; panel reads "waiting for the camera device…"
+  until frames truly flow. `systemextensionsctl uninstall` is
+  SIP-blocked — in-app Uninstall is the only reset path. Pending
+  `waiting to uninstall` generations block fresh launches (reboot
+  clears); a fresh-staged device invisible to our scan but visible to
+  QuickTime/Zoom means stale per-process HAL view → restart the app.
+- Branch learnings: extension embeds via absolute
+  `$(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)` (dstSubfolderSpec
+  16 is silently skipped); extension Info.plist must declare bundle
+  id/executable/version keys (static plists get no auto-generation); app
+  needs CODE_SIGN_ENTITLEMENTS set or the entitlement silently drops;
+  Makefile passes -allowProvisioningUpdates; Bundle.main lookups must use
+  absolute URLs; bump the build number with every staged fix so stale
+  instances are visible in the window title; `CIContext.render(bounds:)`
+  selects a source region — never scales, always transform first;
+  host-only updates via `make reinstall` + Enable need no reboot and no
+  extension version bump (never `make clean` between iterations);
+  Center Stage switch is class-level `centerStageControlMode` /
+  `isCenterStageEnabled`, restored to `.user` on stop.

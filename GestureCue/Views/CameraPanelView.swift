@@ -128,6 +128,59 @@ struct CameraPanelView: View {
             outputControls
             Divider()
             recording
+            Divider()
+            virtualCamera
+        }
+    }
+
+    private var virtualCamera: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Virtual Camera")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text(virtualCameraStatusLine)
+                .font(.callout)
+                .fontWeight(.semibold)
+                .accessibilityLabel("Virtual camera status: \(virtualCameraStatusLine)")
+            Text("Zoom and Teams see “GestureCue Camera” directly. Needs the app in /Applications plus one approval in System Settings.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            HStack {
+                if viewModel.virtualCameraStatus == .active {
+                    Button("Stop Camera") { viewModel.setVirtualCameraEnabled(false) }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                } else {
+                    Button("Enable Camera") { viewModel.setVirtualCameraEnabled(true) }
+                        .buttonStyle(.borderedProminent)
+                }
+                if viewModel.virtualCameraStatus == .needsApproval {
+                    Button("Open Settings") { viewModel.openExtensionSettings() }
+                }
+                // Always offered (except mid-removal): the extension can be
+                // staged while the device is unpublished, in which case the
+                // status reads "Not installed" yet only Uninstall can reset it.
+                if viewModel.virtualCameraStatus != .deactivating {
+                    Button("Uninstall") { viewModel.uninstallVirtualCamera() }
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var virtualCameraStatusLine: String {
+        switch viewModel.virtualCameraStatus {
+        case .notInstalled: return "Not installed"
+        case .installed: return "Installed — streaming off"
+        case .activating: return "Activating…"
+        case .deactivating: return "Removing…"
+        case .needsApproval: return "Needs your approval in System Settings"
+        case .needsReboot: return "Reboot to finish, then Enable again"
+        case .active:
+            return viewModel.virtualCameraStreaming
+                ? "Live — pick “GestureCue Camera” in Zoom"
+                : "Enabled — waiting for the camera device…"
+        case .failed(let message): return "Error: \(message)"
         }
     }
 

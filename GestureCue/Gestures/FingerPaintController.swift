@@ -20,6 +20,8 @@ struct FingerPaintConfig: Sendable, Equatable {
     var minSpacing: Float = 0.005
     var minJointConfidence: Float = 0.3
     var maxPointsPerStroke: Int = 1000
+    /// Seconds a finished brush stroke takes to fade away.
+    var brushFadeDuration: TimeInterval = 1.5
 }
 
 /// Tracks the index fingertip and turns thumb+index pinches into freehand
@@ -41,6 +43,8 @@ final class FingerPaintController: @unchecked Sendable {
     private var activeStroke: PaintStroke?
     private var pinching = false
     private var smoothed: SIMD2<Float>?
+    private var brush = BrushStrokeTracker()
+    private var brushStrokes: [BrushStroke] = []
     private var lastPushed = PaintLayer()
 
     /// Called (on the caller's thread) whenever the visible layer changes.
@@ -60,6 +64,7 @@ final class FingerPaintController: @unchecked Sendable {
             commitLocked()
             pinching = false
             smoothed = nil
+            clearBrushLocked()
             pushLocked()
         }
     }
@@ -77,6 +82,7 @@ final class FingerPaintController: @unchecked Sendable {
             commitLocked()
             pinching = false
             smoothed = nil
+            clearBrushLocked()
             currentCardID = id
             pushLocked()
         }
@@ -185,7 +191,54 @@ final class FingerPaintController: @unchecked Sendable {
         return true
     }
 
+    /// Per-frame two-finger brush update on the video queue. Works in any
+    /// mode (paused parks it via a nil pose); returns true while a brush
+    /// stroke is live so the detector can suppress the two-finger command
+    /// the pose resembles. Finished strokes fade out and are pruned; they
+    /// never persist, undo, or survive card switches.
+    @discardableResult
+    func updateBrush(pose: HandPose?, fingers: [Bool]) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        let tip = Self.brushTip(of: pose, minJointConfidence: config.minJointConfidence)
+        let now = Date()
+        if let point = brush.update(fingers: fingers, tip: tip, smoothing: config.smoothing) {
+            let cg = CGPoint(x: CGFloat(point.x), y: CGFloat(point.y))
+            if let last = brushStrokes.indices.last, brushStrokes[last].endedAt == nil {
+                if let prev = brushStrokes[last].stroke.points.last {
+                    let moved = hypot(Float(cg.x - prev.x), Float(cg.y - prev.y))
+                    if moved >= config.minSpacing, brushStrokes[last].stroke.points.count < config.maxPointsPerStroke {
+                        brushStrokes[last].stroke.points.append(cg)
+                    }
+                } else {
+                    brushStrokes[last].stroke.points.append(cg)
+                }
+            } else {
+                brushStrokes.append(BrushStroke(
+                    stroke: PaintStroke(color: color, points: [cg]),
+                    endedAt: nil,
+                    fadeDuration: config.brushFadeDuration
+                ))
+            }
+        } else if let last = brushStrokes.indices.last, brushStrokes[last].endedAt == nil {
+            brushStrokes[last].endedAt = now
+        }
+        brushStrokes.removeAll { stroke in
+            guard let ended = stroke.endedAt else { return false }
+            return now.timeIntervalSince(ended) >= stroke.fadeDuration
+        }
+        pushLocked()
+        return brush.engaged
+    }
+
     // MARK: - Private (lock held)
+
+    /// Brush strokes mark only the currently visible card; fading remnants
+    /// must never leak onto another card or mode.
+    private func clearBrushLocked() {
+        brush.reset()
+        brushStrokes = []
+    }
 
     private func commitLocked() {
         guard let id = currentCardID, let stroke = activeStroke, !stroke.points.isEmpty else {
@@ -203,7 +256,9 @@ final class FingerPaintController: @unchecked Sendable {
         }
         let layer = PaintLayer(
             strokes: strokes,
-            pointer: smoothed.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) },
+            brushStrokes: brushStrokes,
+            pointer: smoothed.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
+                ?? brush.point.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) },
             pointerColor: color
         )
         guard layer != lastPushed else { return }
@@ -230,6 +285,18 @@ extension FingerPaintController {
         let handSize = distance(wrist, middleMCP)
         guard handSize > 1e-6 else { return nil }
         return distance(indexTip, thumbTip) / handSize
+    }
+
+    /// Midpoint of the index and middle tips (the brush point), or nil when
+    /// either joint is missing or weak.
+    static func brushTip(of pose: HandPose?, minJointConfidence: Float) -> SIMD2<Float>? {
+        guard let pose,
+              let indexTip = pose.point(.indexTip),
+              let middleTip = pose.point(.middleTip),
+              pose.confidence(.indexTip) >= minJointConfidence,
+              pose.confidence(.middleTip) >= minJointConfidence
+        else { return nil }
+        return (indexTip + middleTip) / 2
     }
 
     /// Height of the thumb tip above the palm in hand-size units, or nil
@@ -281,6 +348,39 @@ struct ZoomHandGate: Sendable {
 
     mutating func reset() {
         engaged = false
+    }
+}
+
+/// Two-finger brush engagement (index + middle extended, ring + pinky
+/// curled): tracks the smoothed midpoint of the two tips. The middle
+/// finger is the discriminator — zoom needs it curled, so brush and zoom
+/// can never engage together. Pure per-frame tracker; the controller owns
+/// stroke assembly, fading, and pruning.
+struct BrushStrokeTracker: Sendable {
+    private(set) var engaged = false
+    private(set) var point: SIMD2<Float>?
+
+    /// `fingers` is index..pinky extended flags; `tip` the brush point, or
+    /// nil when its joints are missing or weak. Returns the smoothed tip
+    /// while engaged.
+    mutating func update(fingers: [Bool], tip: SIMD2<Float>?, smoothing: Float) -> SIMD2<Float>? {
+        guard fingers == [true, true, false, false], let tip else {
+            engaged = false
+            point = nil
+            return nil
+        }
+        engaged = true
+        if let current = point {
+            point = current + (tip - current) * smoothing
+        } else {
+            point = tip
+        }
+        return point
+    }
+
+    mutating func reset() {
+        engaged = false
+        point = nil
     }
 }
 

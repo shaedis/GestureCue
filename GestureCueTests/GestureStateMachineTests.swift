@@ -208,6 +208,26 @@ final class GestureStateMachineTests: XCTestCase {
         XCTAssertEqual(fired, .fist, "fires once the still hold completes")
     }
 
+    func testDefaultHoldDurationIsHalfSecond() {
+        XCTAssertEqual(GestureStateMachine.Config().holdDuration, 0.5)
+    }
+
+    func testCustomHoldDurationDelaysFiring() {
+        var config = GestureStateMachine.Config()
+        config.holdDuration = 1.5
+        var machine = GestureStateMachine(config: config)
+        let anchor = SIMD2<Float>(0.5, 0.5)
+        for step in 0..<45 {
+            XCTAssertNil(frame(&machine, .fist, anchor: anchor, step: step), "must not fire before the 1.5s hold")
+        }
+        var fired: HandGesture?
+        for step in 45..<50 {
+            fired = frame(&machine, .fist, anchor: anchor, step: step)
+            if fired != nil { break }
+        }
+        XCTAssertEqual(fired, .fist, "fires once the configured hold completes")
+    }
+
     func testMotionPreventsFiring() {
         var machine = GestureStateMachine()
         // Same pose, wrist jumping 0.2 (beyond the 0.12 radius): signing-like.

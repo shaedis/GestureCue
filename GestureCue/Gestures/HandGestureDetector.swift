@@ -90,6 +90,16 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
         paint.setMode(enabled ? .paint : .off)
     }
 
+    /// Sets the command hold-to-fire duration (user-configurable trigger
+    /// timing). Resets stability so a mid-hold change can't half-fire. The
+    /// 2 s arming clutch is a fixed safety latch and stays untouched.
+    func setHoldDuration(_ duration: TimeInterval) {
+        lock.withLock {
+            stateMachine.config.holdDuration = max(0, duration)
+            stateMachine.reset()
+        }
+    }
+
     /// Pauses hand-driven input (signing mode): cards, zoom, and paint ignore
     /// the hands; only the 2 s palm hold can arm a command window. Resets all
     /// gesture stability on every switch.
@@ -112,6 +122,7 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
         let painting = paint.handle(paused ? nil : pose)
         let analysis = pose.map { classifier.analyze($0) }
         let classification = analysis?.result
+        let brushing = paint.updateBrush(pose: paused ? nil : pose, fingers: paused ? [] : (analysis?.fingers.map(\.extended) ?? []))
         let now = Date()
 
         lock.lock()
@@ -182,6 +193,11 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
                 // The zoom hand owns the frame: it classifies as index-up (the
                 // classifier ignores the thumb), so it must never feed the
                 // state machine — zooming can never flip cards.
+                gated = nil
+            } else if brushing {
+                // The brush hand owns the frame: two extended fingers classify
+                // as a two-finger command, which must never fire from a brush
+                // stroke.
                 gated = nil
             } else {
                 gated = classification

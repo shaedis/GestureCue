@@ -19,13 +19,15 @@ and [docs/](docs/) for manual test checklists and the OBS/Zoom setup guide.
 
 ```sh
 make build   # compile
-make test    # 169 XCTest tests (run in an unsandboxed shell)
+make test    # 179 XCTest tests (run in an unsandboxed shell)
 make app     # stage build/GestureCue.app
 make open    # restart + open the staged app
 ```
 
-The app is ad-hoc signed ("Sign to Run Locally"), so it runs on your Mac
-without a paid developer team.
+On `main` the app is ad-hoc signed ("Sign to Run Locally"), so it runs on
+your Mac without a paid developer team. This branch (`virtual-camera`) signs
+with team `X8YHS47G23` instead, because the camera extension requires a
+provisioning profile — `make` needs an unsandboxed shell for portal access.
 
 ## Camera permission
 
@@ -84,6 +86,91 @@ pinch thumb + index and drag to paint on the card (Undo/Redo/Clear included).
 On a picture card, spread or pinch thumb + index (with the thumb raised) to
 zoom the picture from the camera.
 
+## Virtual camera (branch `virtual-camera`)
+
+On this branch GestureCue also publishes its composited feed as a native
+**“GestureCue Camera”** (720p) that Zoom and Teams can select directly — no
+OBS needed. This requires a paid Apple developer team for signing (team
+`X8YHS47G23`), macOS approval of the system extension, and the app in
+`/Applications`.
+
+Setup (first time):
+
+1. **Accept the Program License Agreement (PLA).** Sign in at
+   [developer.apple.com/account](https://developer.apple.com/account) with
+   the Apple ID that holds the paid membership. If an agreement update is
+   pending, a banner at the top asks you to review it — open it, check the
+   box, and accept. (Only the Account Holder can accept; it takes effect
+   within minutes.)
+2. **Register this Mac in Xcode.** Open Xcode → Settings (⌘,) → Accounts,
+   and confirm your Apple ID is listed with the team. Then open
+   `GestureCue.xcodeproj`, select the **GestureCue** scheme with destination
+   **My Mac**, and press ⌘B. If Xcode reports the Mac isn't registered,
+   accept its offer to register it. This one GUI build also lets Xcode
+   create the provisioning profile; headless `make` works after that.
+3. `make app` (unsandboxed shell), quit any running copy, then
+   `cp -R build/GestureCue.app /Applications/GestureCue.app`.
+4. Open `/Applications/GestureCue.app`, confirm the title shows the newest
+   build, start the camera, and press **Enable Camera** in the Virtual
+   Camera section.
+5. **Approve the extension.** When the status says “Needs your approval”,
+   press **Open Settings** in the Virtual Camera section (or open System
+   Settings → General → Login Items & Extensions, scroll to **Camera
+   Extensions**, and switch GestureCue on). Authenticate if asked, then
+   press Enable Camera again. If macOS asks for a reboot, reboot and
+   Enable once more — status **Live** means frames are flowing.
+
+Full manual checklist (VC-01..07): [docs/VIRTUAL-CAMERA-SETUP.md](docs/VIRTUAL-CAMERA-SETUP.md).
+Status: verified working on camera (Build 42) — Zoom and QuickTime show
+the composited feed.
+
+Updating to a newer build (host-only change, nothing under
+`GestureCueCameraExtension/`) needs no reboot: `make reinstall`, open the
+`/Applications` copy, Start camera, Enable Camera once. The panel reads
+“waiting for the camera device…” until frames truly flow, then flips to
+Live by itself.
+
+### Troubleshooting
+
+Always test with the newest staged build (window title; currently Build
+42) — earlier builds fail at different stages below.
+
+- **“Camera extension not found in this app bundle”**: a stale instance is
+  still running (quit first — the single-instance guard keeps the old one),
+  or an old staged copy. Check the newest build number in the title, then
+  re-copy.
+- **“Missing entitlement com.apple.developer.system-extension.install”**:
+  the running build predates the entitlement fix (Build 38+). Re-copy the
+  newest staged app.
+- **“Extension not found in App bundle / unable to find any matched
+  extension”**: the extension filename must equal its bundle ID and the
+  plist must declare `SYSX` (fixed in Build 37+). Re-copy.
+- **“extension category returned error”**: the mach service name must sit
+  inside an entitled App Group (fixed in Build 38+ via the
+  `X8YHS47G23.com.gesturecue.app` group). Re-copy. Diagnose further with
+  `systemextensionsctl list` and the sysextd log.
+- **Stuck on “waiting for the camera device…”**: the device isn't
+  published. Check `pgrep -afl -i cameraextension` (empty = process never
+  launched) and `systemextensionsctl list | grep -i gesturecue`. Any
+  `waiting to uninstall on reboot` line blocks fresh launches: quit all
+  camera clients, Uninstall, Enable once; if no process starts, reboot
+  (clears the pending generations), then Enable. The `systemextensionsctl
+  uninstall` CLI is SIP-blocked — use the in-app Uninstall button.
+- **Fresh device invisible to the app but visible in QuickTime/Zoom**:
+  quit and reopen GestureCue (stale per-process HAL view), then Enable —
+  no reboot needed.
+- **Zoom shows the slate but no video**: the host can't see the sink.
+  Re-copy the newest build, Enable, then inspect the frame path with:
+  `log show --last 10m --predicate 'subsystem BEGINSWITH "com.gesturecue"' --style compact | tail -40`
+- **Xcode “PLA Update available”**: accept the Program License Agreement in
+  your developer account, then retry.
+- **Xcode “device isn't registered” / “No profiles”**: build once in the
+  Xcode GUI and accept Mac registration; headless `make` works after that
+  (run it unsandboxed — portal and keychain access fail sandboxed).
+- **Zoom shows a black frame**: press Enable Camera in GestureCue first.
+- **Conflicts**: quit other virtual cameras (e.g. OBS Virtual Camera) if the
+  feed stalls.
+
 ## Architecture
 
 One shared capture pipeline feeds analysis, output, and recording:
@@ -131,14 +218,17 @@ frames). Camera/Zoom behavior additionally needs the manual checklists in
   or extreme camera angles may misclassify (reported as Unknown, never a guess).
 - Thumb left/right directions were derived from code rather than hardware —
   verify on camera (see MT-10 in the Phase 1 checklist).
-- No virtual camera yet: Zoom/Teams integration currently goes through OBS
-  capturing the output window (see above).
+- `main` has no virtual camera yet: Zoom/Teams integration there goes through
+  OBS capturing the output window (see above). This branch adds the native
+  camera (see Virtual camera above) — verified working on camera; merge
+  pending the VC-01..07 checklist.
 - Sample cards are hand-written; no AI generation or speech recognition.
 
 ## Roadmap
 
-1. **Virtual camera:** CoreMediaIO camera extension (`VirtualCameraService`)
-   behind the existing `VideoOutputService` seam (may need a paid Apple
-   signing identity to activate locally).
+1. **Virtual camera:** working on branch `virtual-camera`
+   (CoreMediaIO camera extension behind the `VideoOutputService` seam,
+   verified on camera in Zoom + QuickTime); remaining: VC-01..07
+   checklist, then merge to `main`.
 2. **AI-assisted cards:** short accessible message generation, kept out by
    design until a milestone spec covers the service and privacy story.
