@@ -19,7 +19,7 @@ final class AVFoundationVideoCaptureService: NSObject, VideoCaptureService, @unc
     // MARK: - sessionQueue-confined state
     private var videoOutput: AVCaptureVideoDataOutput?
     private var pendingDeviceID: String?
-    private var resolution: CaptureResolution = .hd720
+    private var resolution: CaptureResolution = .defaultResolution
     private var isConfigured = false
     private var notificationObservers: [NSObjectProtocol] = []
 
@@ -130,6 +130,13 @@ final class AVFoundationVideoCaptureService: NSObject, VideoCaptureService, @unc
             videoOutput = output
         }
 
+        // Fixed framing for presenting: Center Stage auto-tracking would
+        // drift the presenter against the burned-in cards (and tighten the
+        // crop). Exclusive app control (grays out the Control Center toggle
+        // while we hold the camera); restored to user control on stop.
+        AVCaptureDevice.centerStageControlMode = .app
+        AVCaptureDevice.isCenterStageEnabled = false
+
         isConfigured = true
         // Front cameras are preview-mirrored by default; the overlay must match.
         return device.position == .front
@@ -137,6 +144,7 @@ final class AVFoundationVideoCaptureService: NSObject, VideoCaptureService, @unc
 
     private func teardownLocked() {
         assertQueue()
+        AVCaptureDevice.centerStageControlMode = .user
         for input in session.inputs {
             session.removeInput(input)
         }

@@ -652,6 +652,54 @@ until frames truly flow, then flips to Live on its own. Tests:
 Next: user installs Build 42, Uninstall (now visible) → Enable;
 if v3 still won't launch, reboot (pending v2 clears at boot).
 
+## 2026-10-29 — Build 43: wider stable capture (1080p default, Center Stage off)
+
+User compared Zoom screenshots: virtual feed (ours, 16:9 exact) frames
+tighter than Zoom-driving-built-in-direct. Root cause is source FOV, not
+stretch: the 720p preset center-crops the 12MP sensor, and Center Stage
+auto-tracking drifts the presenter against the burned-in cards. Fix:
+capture defaults to 1080p (wider sensor window, clean downscale to the
+720p outputs); Center Stage forced off under exclusive app control
+(`centerStageControlMode = .app`, restored to `.user` on stop) for a
+fixed presenting frame. Also fixed: persisted resolution was never
+pushed on start (every launch silently fell back until re-toggle).
+Tests: 184/184 green (2 new default/preset guards; Center Stage path is
+hardware-bound). Staged, deep OK. API note: the Center Stage switch is
+the class-level `AVCaptureDevice.centerStageControlMode` /
+`.isCenterStageEnabled` (12.3+), not per-device members.
+Next: user installs Build 43, toggles Resolution to 1080p once
+(persisted 720p needs one manual switch), verifies wider stable framing
++ hands in frame while signing, gestures still fire, Zoom full card.
+
+## 2026-10-29 — Build 44: configurable trigger timing (user request)
+
+New "Trigger Timing" slider in Gesture Control: command hold-to-fire
+0.2–2.0 s in 0.1 steps, readout in seconds + ms, persisted, applied
+live (mid-hold changes reset stability). Default stays 0.5 s; 2 s
+arming clutch and cooldown stay fixed safety behavior. Plumbing:
+`HandGestureDetector.setHoldDuration` → state machine config.
+Tests: 186/186 green (default-0.5 guard + 1.5 s custom-hold firing
+test). Staged, deep OK. On-camera feel (slider → fire timing) needs
+user verification.
+Next: user installs Build 44, drags slider, confirms fire timing
+follows; then commit + push Builds 43–44 (ask), VC-01..07, merge.
+
+## 2026-10-29 — Build 45: two-finger fading brush (user request)
+
+Index + middle extended (ring/pinky curled, any thumb) now paints
+freehand strokes on the visible card that fade out ~1.5 s after release
+instead of persisting — any stroke direction, nothing remains. Works in
+any mode without entering paint mode; uses the shared paint color.
+Middle-extended discriminates from zoom (needs it curled), so the two
+can never engage together; while brushing, the resembling two-finger
+command is suppressed. Strokes clear on card/mode switch (no leaking
+onto another card); expired ones pruned per frame, fade computed at
+draw time so no frame churn. Tests: 199/199 green (9 brush engage/draw/
+fade/prune/exclusion + 4 fade-curve). Staged, deep OK. On-camera feel
+(engage reliability, fade speed) needs user verification.
+Next: user installs Build 45, brushes over card text/pictures,
+confirms strokes appear + vanish; then commit + push 43–45 (ask).
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

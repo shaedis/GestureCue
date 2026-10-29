@@ -3,7 +3,7 @@ import SwiftUI
 /// Manual build counter, bumped on every restage so testers can confirm
 /// which build is running (plain `open` won't restart a running app).
 enum AppInfo {
-    static let build = 42
+    static let build = 45
 }
 
 @main

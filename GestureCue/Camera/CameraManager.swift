@@ -44,7 +44,7 @@ final class CameraManager: NSObject, ObservableObject {
     }
     @Published private(set) var errorMessage: String?
     @Published private(set) var isPreviewMirrored = false
-    @Published var resolution: CaptureResolution = .hd720 {
+    @Published var resolution: CaptureResolution = .defaultResolution {
         didSet {
             guard oldValue != resolution else { return }
             UserDefaults.standard.set(resolution.rawValue, forKey: Self.resolutionKey)
@@ -65,7 +65,7 @@ final class CameraManager: NSObject, ObservableObject {
         self.captureService = captureService
         super.init()
         selectedDeviceID = UserDefaults.standard.string(forKey: Self.selectedDeviceKey)
-        resolution = CaptureResolution(rawValue: UserDefaults.standard.string(forKey: Self.resolutionKey) ?? "") ?? .hd720
+        resolution = CaptureResolution(rawValue: UserDefaults.standard.string(forKey: Self.resolutionKey) ?? "") ?? .defaultResolution
         consumeEvents()
         refreshDevices()
         observeDeviceChanges()
@@ -122,6 +122,10 @@ final class CameraManager: NSObject, ObservableObject {
         }
         errorMessage = nil
         status = .starting
+        // Push the persisted resolution: didSet doesn't fire for the init
+        // assignment, so without this every launch falls back to the
+        // service default until the user re-toggles the picker.
+        captureService.selectResolution(resolution)
         captureService.start(deviceID: selectedDeviceID)
     }
 

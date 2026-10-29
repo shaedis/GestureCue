@@ -118,8 +118,16 @@ branch `virtual-camera`, currently checked out and UNCOMMITTED (10 modified,
   182/182 green, staged. Current blocker: v3 staged but process never
   launches while v2 pends uninstall; CLI uninstall SIP-blocked. Resume:
   install Build 42, Uninstall → Enable (clients quit); if no process,
-  reboot (clears v2), Enable, Zoom verify FULL card; then VC-01..07,
-  commit + push (ask).
+  reboot (clears v2), Enable, Zoom verify FULL card. WORKING (Zoom +
+  QuickTime); committed d182f8f, pushed, tag virtual-camera-works.
+  Build 43 staged (NOT committed): 1080p capture default, Center Stage
+  off (stable frame), persisted-resolution push on start, 184/184 green.
+  Build 44 staged (NOT committed): configurable trigger timing slider
+  (0.2–2.0 s hold, persisted, live), 186/186 green.
+  Build 45 staged (NOT committed): two-finger fading brush on cards
+  (1.5 s fade, zoom-exclusive, command-suppressed), 199/199 green.
+  Resume: user installs Build 45, verifies brush + slider + framing;
+  then commit + push (ask), VC-01..07, merge decision.
 - Branch learnings: extension embeds via absolute
   `$(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)` (dstSubfolderSpec
   16 is silently skipped); extension Info.plist must declare bundle

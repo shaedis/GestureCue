@@ -13,6 +13,8 @@ struct GestureControlPanelView: View {
                     Divider()
                     currentGesture
                     Divider()
+                    triggerTiming
+                    Divider()
                     mapping
                     Divider()
                     paint
@@ -61,7 +63,7 @@ struct GestureControlPanelView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(viewModel.handDetected ? "Hand detected" : "No hand detected")
-            Text("Index up + thumb raised: spread/pinch to zoom. Thumb tucked: card gestures.")
+            Text("Index up + thumb raised: spread/pinch to zoom. Thumb tucked: card gestures. Index + middle together: brush — strokes fade away.")
                 .font(.callout)
                 .foregroundColor(.secondary)
             if viewModel.handDetected {
@@ -129,6 +131,29 @@ struct GestureControlPanelView: View {
         } else {
             "Hold steady…"
         }
+    }
+
+    private var triggerTiming: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Trigger Timing")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("How long to hold a gesture still before it fires.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            HStack {
+                Slider(value: $viewModel.holdDuration, in: 0.2...2.0, step: 0.1)
+                    .accessibilityLabel("Hold seconds to trigger")
+                    .accessibilityValue(holdLabel)
+                Text(holdLabel)
+                    .font(.callout.monospacedDigit())
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var holdLabel: String {
+        String(format: "%.1f s (%d ms)", viewModel.holdDuration, Int((viewModel.holdDuration * 1000).rounded()))
     }
 
     private var mapping: some View {

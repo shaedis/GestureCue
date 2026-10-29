@@ -35,12 +35,16 @@ protocol VideoCaptureService: Sendable {
     func selectResolution(_ resolution: CaptureResolution)
 }
 
-/// Capture/output resolution. 720p is the default; 1080p raises camera
-/// bandwidth and output sharpness. The compositor follows frame size, and
-/// gesture geometry is resolution-independent, so no consumer reconfigures.
+/// Capture/output resolution. 1080p is the default: on high-resolution
+/// sensors (e.g. Center Stage cameras) it uses a wider window than 720p,
+/// which keeps signing hands in frame, and downscales cleanly to the
+/// 720p virtual camera. The compositor follows frame size, and gesture
+/// geometry is resolution-independent, so no consumer reconfigures.
 enum CaptureResolution: String, CaseIterable, Sendable {
     case hd720
     case hd1080
+
+    static let defaultResolution: CaptureResolution = .hd1080
 
     var displayName: String {
         switch self {

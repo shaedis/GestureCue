@@ -121,11 +121,19 @@ Setup (first time):
    Enable once more — status **Live** means frames are flowing.
 
 Full manual checklist (VC-01..07): [docs/VIRTUAL-CAMERA-SETUP.md](docs/VIRTUAL-CAMERA-SETUP.md).
+Status: verified working on camera (Build 42) — Zoom and QuickTime show
+the composited feed.
+
+Updating to a newer build (host-only change, nothing under
+`GestureCueCameraExtension/`) needs no reboot: `make reinstall`, open the
+`/Applications` copy, Start camera, Enable Camera once. The panel reads
+“waiting for the camera device…” until frames truly flow, then flips to
+Live by itself.
 
 ### Troubleshooting
 
 Always test with the newest staged build (window title; currently Build
-40) — earlier builds fail at different stages below.
+42) — earlier builds fail at different stages below.
 
 - **“Camera extension not found in this app bundle”**: a stale instance is
   still running (quit first — the single-instance guard keeps the old one),
@@ -141,9 +149,18 @@ Always test with the newest staged build (window title; currently Build
   inside an entitled App Group (fixed in Build 38+ via the
   `X8YHS47G23.com.gesturecue.app` group). Re-copy. Diagnose further with
   `systemextensionsctl list` and the sysextd log.
+- **Stuck on “waiting for the camera device…”**: the device isn't
+  published. Check `pgrep -afl -i cameraextension` (empty = process never
+  launched) and `systemextensionsctl list | grep -i gesturecue`. Any
+  `waiting to uninstall on reboot` line blocks fresh launches: quit all
+  camera clients, Uninstall, Enable once; if no process starts, reboot
+  (clears the pending generations), then Enable. The `systemextensionsctl
+  uninstall` CLI is SIP-blocked — use the in-app Uninstall button.
+- **Fresh device invisible to the app but visible in QuickTime/Zoom**:
+  quit and reopen GestureCue (stale per-process HAL view), then Enable —
+  no reboot needed.
 - **Zoom shows the slate but no video**: the host can't see the sink.
-  Reboot (clears stale extension versions), re-copy, Enable, then inspect
-  the frame path with:
+  Re-copy the newest build, Enable, then inspect the frame path with:
   `log show --last 10m --predicate 'subsystem BEGINSWITH "com.gesturecue"' --style compact | tail -40`
 - **Xcode “PLA Update available”**: accept the Program License Agreement in
   your developer account, then retry.
@@ -203,13 +220,15 @@ frames). Camera/Zoom behavior additionally needs the manual checklists in
   verify on camera (see MT-10 in the Phase 1 checklist).
 - `main` has no virtual camera yet: Zoom/Teams integration there goes through
   OBS capturing the output window (see above). This branch adds the native
-  camera (see Virtual camera above) — pending your hardware verification.
+  camera (see Virtual camera above) — verified working on camera; merge
+  pending the VC-01..07 checklist.
 - Sample cards are hand-written; no AI generation or speech recognition.
 
 ## Roadmap
 
-1. **Virtual camera:** in progress on branch `virtual-camera`
-   (CoreMediaIO camera extension behind the `VideoOutputService` seam);
-   remaining: provisioning/activation on real hardware, then merge to `main`.
+1. **Virtual camera:** working on branch `virtual-camera`
+   (CoreMediaIO camera extension behind the `VideoOutputService` seam,
+   verified on camera in Zoom + QuickTime); remaining: VC-01..07
+   checklist, then merge to `main`.
 2. **AI-assisted cards:** short accessible message generation, kept out by
    design until a milestone spec covers the service and privacy story.

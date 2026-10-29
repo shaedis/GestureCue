@@ -29,6 +29,13 @@ final class AppViewModel: ObservableObject {
     @Published var gestureMapping: [HandGesture: CardAction] {
         didSet { saveMapping() }
     }
+    /// Command hold-to-fire seconds (user-configurable trigger timing).
+    @Published var holdDuration: TimeInterval {
+        didSet {
+            UserDefaults.standard.set(holdDuration, forKey: Self.holdDurationKey)
+            gestureDetector.setHoldDuration(holdDuration)
+        }
+    }
     @Published private(set) var candidate: HandGesture = .unknown
     @Published private(set) var stabilityProgress: Double = 0
     @Published private(set) var confidence: Float = 0
@@ -84,6 +91,7 @@ final class AppViewModel: ObservableObject {
     // (both occur in signing); those plus fist are unassigned by default.
     // Old saves are superseded so installs pick up the new mapping.
     private static let mappingKey = "GestureCue.gestureMapping.v5"
+    private static let holdDurationKey = "GestureCue.holdDuration"
     private static let cardPositionKey = "GestureCue.cardPosition"
     private static let highlightColorKey = "GestureCue.highlightColor"
     private static let mirrorModeKey = "GestureCue.outputMirrorMode"
@@ -118,6 +126,8 @@ final class AppViewModel: ObservableObject {
         let paintController = FingerPaintController()
         paintController.sink = { [compositor] layer in compositor.updatePaint(layer) }
         let gestureDetector = HandGestureDetector(paint: paintController)
+        let hold = Self.loadHoldDuration()
+        gestureDetector.setHoldDuration(hold)
         let recorder = VideoRecorder()
         let virtualCameraService = VirtualCameraService(transport: CMIOVirtualCameraTransport())
         let extensionManager = SystemExtensionManager()
@@ -147,6 +157,7 @@ final class AppViewModel: ObservableObject {
         self.library = library
         self.store = PresentationCardStore(cards: library.selected?.cards ?? [])
         self.gestureMapping = Self.loadMapping()
+        self.holdDuration = hold
         self.cardPosition = CardOverlayPosition(
             rawValue: UserDefaults.standard.string(forKey: Self.cardPositionKey) ?? ""
         ) ?? .bottom
@@ -693,5 +704,14 @@ final class AppViewModel: ObservableObject {
     private func saveMapping() {
         let raw = Dictionary(uniqueKeysWithValues: gestureMapping.map { ($0.key.rawValue, $0.value.rawValue) })
         UserDefaults.standard.set(try? JSONEncoder().encode(raw), forKey: Self.mappingKey)
+    }
+
+    /// Persisted trigger timing, clamped to the slider range; 0.5 s default.
+    private static func loadHoldDuration() -> TimeInterval {
+        let fallback = GestureStateMachine.Config().holdDuration
+        guard let stored = UserDefaults.standard.object(forKey: holdDurationKey) as? TimeInterval else {
+            return fallback
+        }
+        return min(max(stored, 0.2), 2.0)
     }
 }

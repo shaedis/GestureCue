@@ -797,3 +797,48 @@ final class VirtualCameraServiceTests: XCTestCase {
         XCTAssertEqual(transport.sentCount, 1)
     }
 }
+
+// MARK: - Capture Resolution
+
+final class CaptureResolutionTests: XCTestCase {
+    /// 1080p default: wider sensor window on high-resolution cameras keeps
+    /// signing hands in frame; downscales cleanly to the 720p outputs.
+    func testDefaultResolutionIs1080p() {
+        XCTAssertEqual(CaptureResolution.defaultResolution, .hd1080)
+    }
+
+    func testSessionPresetsAre169() {
+        XCTAssertEqual(CaptureResolution.hd720.sessionPreset, .hd1280x720)
+        XCTAssertEqual(CaptureResolution.hd1080.sessionPreset, .hd1920x1080)
+    }
+}
+
+final class BrushFadeTests: XCTestCase {
+    private let end = Date(timeIntervalSinceReferenceDate: 2000)
+
+    func testLiveStrokeIsFullyOpaque() {
+        XCTAssertEqual(CardOverlayCompositor.brushAlpha(endedAt: nil, at: end, fadeDuration: 1.5), 1)
+    }
+
+    func testFadeCurveIsLinear() {
+        XCTAssertEqual(CardOverlayCompositor.brushAlpha(endedAt: end, at: end, fadeDuration: 1.5), 1)
+        XCTAssertEqual(
+            CardOverlayCompositor.brushAlpha(endedAt: end, at: end.addingTimeInterval(0.75), fadeDuration: 1.5),
+            0.5, accuracy: 0.001
+        )
+        XCTAssertEqual(
+            CardOverlayCompositor.brushAlpha(endedAt: end, at: end.addingTimeInterval(1.5), fadeDuration: 1.5),
+            0, accuracy: 0.001
+        )
+    }
+
+    func testExpiredStrokeStaysGone() {
+        XCTAssertEqual(
+            CardOverlayCompositor.brushAlpha(endedAt: end, at: end.addingTimeInterval(99), fadeDuration: 1.5), 0
+        )
+    }
+
+    func testZeroFadeHidesImmediately() {
+        XCTAssertEqual(CardOverlayCompositor.brushAlpha(endedAt: end, at: end, fadeDuration: 0), 0)
+    }
+}
