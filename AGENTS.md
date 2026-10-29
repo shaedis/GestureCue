@@ -96,38 +96,35 @@ Long-term goal: feed GestureCue's processed video (camera + card overlays) into 
   AI-generated cards (needs product decisions). Otherwise fix frictions
   from real services. Read PROGRESS.md tail for round-by-round evidence.
 
-## Branch virtual-camera (Build 36, 2026-10-29) — RESUME HERE
+## Branch virtual-camera (Build 45, 2026-10-29) — RESUME HERE
 
 `main` is the untouched A line (OBS output). All virtual-camera work is on
-branch `virtual-camera`, currently checked out and UNCOMMITTED (10 modified,
-5 new paths — commit before switching branches).
+branch `virtual-camera` (checked out, tree clean). HEAD 3ccca10, pushed;
+tags `virtual-camera-works` (Build 42) and `virtual-camera-build-45`.
 
-- Done: CoreMediaIO camera extension target + host activation/sender/UI,
-  179/179 tests green, staged app deep-verified. Docs:
-  docs/VIRTUAL-CAMERA-SETUP.md (checklist VC-01..07).
-- Provisioning CLEARED 2026-10-29 14:37 (PLA + Xcode GUI registration).
-- Activation LIVE in Build 38, but Zoom showed only the slate: host log
-  proves findDevice never sees the device (Zoom does). Build 40 staged:
-  buffer-pointer reads, scan + AVFoundation logging, UID fallback,
-  stable device/stream UUIDs, extension v3. Post-reboot: activation live,
-  frames flowing, but Zoom cut the card on 1080p captures — scaler
-  rendered `bounds` as a source-region crop instead of scaling (Build 41
-  fix + regression test, 180/180 green unsandboxed, staged,
-  deep-verified). Build 42: Uninstall always reachable (was hidden when
-  device unpublished), honest Live label via sink-connected ticker,
-  182/182 green, staged. Current blocker: v3 staged but process never
-  launches while v2 pends uninstall; CLI uninstall SIP-blocked. Resume:
-  install Build 42, Uninstall → Enable (clients quit); if no process,
-  reboot (clears v2), Enable, Zoom verify FULL card. WORKING (Zoom +
-  QuickTime); committed d182f8f, pushed, tag virtual-camera-works.
-  Build 43 staged (NOT committed): 1080p capture default, Center Stage
-  off (stable frame), persisted-resolution push on start, 184/184 green.
-  Build 44 staged (NOT committed): configurable trigger timing slider
-  (0.2–2.0 s hold, persisted, live), 186/186 green.
-  Build 45 staged (NOT committed): two-finger fading brush on cards
-  (1.5 s fade, zoom-exclusive, command-suppressed), 199/199 green.
-  Resume: user installs Build 45, verifies brush + slider + framing;
-  then commit + push (ask), VC-01..07, merge decision.
+- State: native virtual camera WORKING and user-verified on camera in
+  Zoom + QuickTime (Build 42→45): full card (title/message/picture) at
+  720p and 1080p, 1080p capture default with Center Stage off (stable
+  wide frame), configurable trigger timing (0.2–2.0 s hold slider),
+  two-finger fading brush on cards (1.5 s fade). 199/199 XCTest green
+  (unsandboxed), staged app deep-verified.
+- Docs: docs/VIRTUAL-CAMERA-SETUP.md (VC-01..07 checklist), README
+  Virtual camera + troubleshooting (current), PROGRESS.md tail.
+- Next, in order: (1) user runs VC-01..07 checklist; (2) merge
+  `virtual-camera` → `main` (ask first); (3) open improvements, all
+  optional: per-process HAL refresh so Enable-after-staging works
+  without an app restart; motion-gesture triggers — user said WAIT,
+  advised against (signing is motion; still-holds only).
+- Machine state (user's Mac): extension v3 active with a fresh staging;
+  older `waiting to uninstall on reboot` generations are inert and clear
+  at the next reboot. User's app: /Applications copy at Build 45.
+- If the device ever goes missing again: quit camera clients →
+  Uninstall → Enable; panel reads "waiting for the camera device…"
+  until frames truly flow. `systemextensionsctl uninstall` is
+  SIP-blocked — in-app Uninstall is the only reset path. Pending
+  `waiting to uninstall` generations block fresh launches (reboot
+  clears); a fresh-staged device invisible to our scan but visible to
+  QuickTime/Zoom means stale per-process HAL view → restart the app.
 - Branch learnings: extension embeds via absolute
   `$(BUILT_PRODUCTS_DIR)/$(SYSTEM_EXTENSIONS_FOLDER_PATH)` (dstSubfolderSpec
   16 is silently skipped); extension Info.plist must declare bundle
@@ -135,4 +132,9 @@ branch `virtual-camera`, currently checked out and UNCOMMITTED (10 modified,
   needs CODE_SIGN_ENTITLEMENTS set or the entitlement silently drops;
   Makefile passes -allowProvisioningUpdates; Bundle.main lookups must use
   absolute URLs; bump the build number with every staged fix so stale
-  instances are visible in the window title.
+  instances are visible in the window title; `CIContext.render(bounds:)`
+  selects a source region — never scales, always transform first;
+  host-only updates via `make reinstall` + Enable need no reboot and no
+  extension version bump (never `make clean` between iterations);
+  Center Stage switch is class-level `centerStageControlMode` /
+  `isCenterStageEnabled`, restored to `.user` on stop.

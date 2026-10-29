@@ -700,6 +700,18 @@ fade/prune/exclusion + 4 fade-curve). Staged, deep OK. On-camera feel
 Next: user installs Build 45, brushes over card text/pictures,
 confirms strokes appear + vanish; then commit + push 43–45 (ask).
 
+## Session end 2026-10-29 — virtual camera shipped (Build 45, all verified)
+
+User verified on camera: full card in Zoom at 720p + 1080p, wider
+stable framing, trigger-timing slider feel, fading brush (appears +
+vanishes). Committed 3ccca10 ("Framing, trigger timing, fading brush"),
+pushed branch `virtual-camera`, tag `virtual-camera-build-45` (joins
+`virtual-camera-works` on Build 42). Tree clean. Motion-gesture
+triggers explicitly DEFERRED by user (advised against: signing is
+motion). Resume: VC-01..07 checklist → merge to main (ask) → optional
+HAL-refresh improvement. AGENTS.md holds the resume state; this log
+holds the round-by-round evidence above.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

@@ -52,8 +52,9 @@ untouched; this doc only applies to this branch.
 
 ## Troubleshooting
 
-- Requires Build 40+ (window title). Earlier branch builds can't find or
-  activate the extension, or can't feed it frames.
+- Requires Build 42+ (window title; current is Build 45). Earlier branch
+  builds can't find or activate the extension, or can't feed it frames
+  (Build 40/41 cropped 1080p captures in Zoom).
 - “Camera extension not found in this app bundle”: a stale instance is still
   running (quit first — the single-instance guard keeps the old one), or an
   old staged copy. Check the title says the newest build, then re-copy.
