@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import GestureCue
 
@@ -502,5 +503,239 @@ final class BrushStrokeTests: XCTestCase {
         ))
         paint.setCurrentCard(UUID())
         XCTAssertTrue(box.layers.last?.brushStrokes.isEmpty ?? false, "remnants must not leak onto another card")
+    }
+
+    func testBrushEndSnapsWobblyHorizontal() throws {
+        let (paint, box) = brushedController()
+        // Wobbly horizontal drag, then fingers off.
+        for (x, wobble) in [(0.2, 0.0), (0.3, 0.005), (0.4, -0.004), (0.5, 0.003), (0.6, 0.0)] {
+            let tip = SIMD2<Float>(Float(x), Float(0.5 + wobble))
+            XCTAssertTrue(paint.updateBrush(
+                pose: brushPose(indexTip: tip, middleTip: tip + SIMD2(0.04, 0)), fingers: brushFingers
+            ))
+        }
+        let raw = try XCTUnwrap(box.layers.last?.brushStrokes.first)
+        XCTAssertNil(raw.endedAt)
+        XCTAssertGreaterThan(raw.stroke.points.count, 2, "live stroke keeps raw wobble")
+        XCTAssertFalse(paint.updateBrush(pose: nil, fingers: []))
+        let snapped = try XCTUnwrap(box.layers.last?.brushStrokes.first)
+        XCTAssertNotNil(snapped.endedAt)
+        XCTAssertEqual(snapped.stroke.points.count, 2, "snapped line is two endpoints")
+        XCTAssertEqual(snapped.stroke.points[0].y, snapped.stroke.points[1].y, accuracy: 0.0001)
+        XCTAssertGreaterThan(snapped.stroke.points[1].x - snapped.stroke.points[0].x, 0.1)
+    }
+
+    func testBrushEndSnapsLoopToEllipse() throws {
+        let (paint, box) = brushedController()
+        // Screen circle around (0.5, 0.5): normalized ry is taller.
+        for step in 0 ... 12 {
+            let angle = Float(step) * 2 * Float.pi / 12
+            let tip = SIMD2<Float>(0.5 + 0.1 * cos(angle), 0.5 + 0.1 * Float(16.0 / 9.0) * sin(angle))
+            XCTAssertTrue(paint.updateBrush(
+                pose: brushPose(indexTip: tip, middleTip: tip + SIMD2(0.04, 0)), fingers: brushFingers
+            ))
+        }
+        XCTAssertFalse(paint.updateBrush(pose: nil, fingers: []))
+        let snapped = try XCTUnwrap(box.layers.last?.brushStrokes.first)
+        XCTAssertEqual(snapped.stroke.points.count, 48, "sampled ellipse perimeter")
+        let xs = snapped.stroke.points.map(\.x), ys = snapped.stroke.points.map(\.y)
+        XCTAssertEqual((xs.max() ?? 0) - (xs.min() ?? 0), 0.2, accuracy: 0.06)
+        XCTAssertEqual((ys.max() ?? 0) - (ys.min() ?? 0), 0.2 * 16 / 9, accuracy: 0.12)
+    }
+
+    func testBrushEndKeepsDiagonalFreehand() throws {
+        let (paint, box) = brushedController()
+        for t in [0.2, 0.3, 0.4, 0.5] {
+            let tip = SIMD2<Float>(Float(t), Float(t))
+            XCTAssertTrue(paint.updateBrush(
+                pose: brushPose(indexTip: tip, middleTip: tip + SIMD2(0.04, 0)), fingers: brushFingers
+            ))
+        }
+        XCTAssertFalse(paint.updateBrush(pose: nil, fingers: []))
+        let points = try XCTUnwrap(box.layers.last?.brushStrokes.first?.stroke.points)
+        XCTAssertGreaterThan(points.count, 2, "diagonals keep raw points")
+    }
+}
+
+final class MouseBrushTests: XCTestCase {
+    private func mouseController(snapping: Bool = true, fade: TimeInterval = 1.5) -> (FingerPaintController, LayersBox) {
+        var config = FingerPaintConfig()
+        config.shapeSnapping = snapping
+        config.brushFadeDuration = fade
+        let paint = FingerPaintController(config: config)
+        let box = LayersBox()
+        paint.sink = { box.layers.append($0) }
+        return (paint, box)
+    }
+
+    func testDownMoveUpProducesFadingStroke() throws {
+        let (paint, box) = mouseController(snapping: false)
+        paint.mouseBrushDown(at: CGPoint(x: 0.2, y: 0.2))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.4, y: 0.3))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.401, y: 0.301))
+        paint.mouseBrushUp()
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertNotNil(strokes.first?.endedAt, "released stroke is fading")
+        XCTAssertEqual(strokes.first?.stroke.points.count, 2, "sub-spacing nudge ignored")
+    }
+
+    func testUpSnapsWobblyHorizontal() throws {
+        let (paint, box) = mouseController()
+        paint.mouseBrushDown(at: CGPoint(x: 0.2, y: 0.5))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.4, y: 0.51))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.6, y: 0.49))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.8, y: 0.5))
+        paint.mouseBrushUp()
+        let points = try XCTUnwrap(box.layers.last?.brushStrokes.first?.stroke.points)
+        XCTAssertEqual(points.count, 2, "snapped line is two endpoints")
+        XCTAssertEqual(points.first?.y ?? -1, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(points.last?.y ?? -1, 0.5, accuracy: 1e-9)
+    }
+
+    func testPrunesAfterFade() throws {
+        let (paint, box) = mouseController(fade: 0.01)
+        paint.mouseBrushDown(at: CGPoint(x: 0.2, y: 0.2))
+        paint.mouseBrushUp()
+        Thread.sleep(forTimeInterval: 0.05)
+        paint.mouseBrushDown(at: CGPoint(x: 0.5, y: 0.5))
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 1, "faded stroke pruned on next press")
+        XCTAssertNil(strokes.first?.endedAt, "only the new live stroke remains")
+    }
+
+    func testMoveWithoutDownIsNoop() {
+        let (paint, box) = mouseController()
+        paint.mouseBrushMoved(to: CGPoint(x: 0.5, y: 0.5))
+        paint.mouseBrushUp()
+        XCTAssertTrue(box.layers.isEmpty, "hover and dry release push nothing")
+    }
+
+    func testSurvivesHandParking() throws {
+        // Detection pauses park the hand (nil pose) but must not kill a
+        // mouse stroke: the mouse is explicit UI input, like buttons.
+        let (paint, box) = mouseController()
+        paint.mouseBrushDown(at: CGPoint(x: 0.3, y: 0.3))
+        _ = paint.updateBrush(pose: nil, fingers: [])
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertNil(strokes.first?.endedAt, "mouse stroke stays live")
+    }
+
+    func testMouseAndHandBrushCoexist() throws {
+        let (paint, box) = mouseController()
+        let pose = HandPose(
+            points: [.indexTip: SIMD2<Float>(0.5, 0.5), .middleTip: SIMD2<Float>(0.54, 0.5)],
+            confidences: [.indexTip: 0.95, .middleTip: 0.95]
+        )
+        XCTAssertTrue(paint.updateBrush(pose: pose, fingers: [true, true, false, false]))
+        paint.mouseBrushDown(at: CGPoint(x: 0.2, y: 0.2))
+        paint.mouseBrushMoved(to: CGPoint(x: 0.3, y: 0.2))
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 2, "hand and mouse strokes merge into one layer")
+        XCTAssertTrue(strokes.allSatisfy { $0.endedAt == nil }, "both stay live")
+    }
+
+    func testClearedOnCardSwitch() throws {
+        let (paint, box) = mouseController()
+        paint.mouseBrushDown(at: CGPoint(x: 0.3, y: 0.3))
+        paint.setCurrentCard(UUID())
+        XCTAssertTrue(try XCTUnwrap(box.layers.last?.brushStrokes).isEmpty)
+    }
+}
+
+final class BrushShapeClassifierTests: XCTestCase {
+    func testHorizontalWobbleSnaps() throws {
+        let points = [0.2, 0.3, 0.4, 0.5, 0.6].enumerated().map { index, x in
+            CGPoint(x: x, y: 0.5 + [0.0, 0.004, -0.003, 0.002, 0.0][index])
+        }
+        let shape = try XCTUnwrap(BrushShapeClassifier.classify(points))
+        guard case let .line(from, to) = shape else { return XCTFail("expected line, got \(shape)") }
+        XCTAssertEqual(from.y, to.y, accuracy: 0.0001)
+        XCTAssertEqual(from.y, 0.5, accuracy: 0.01)
+        XCTAssertEqual(from.x, 0.2, accuracy: 0.01)
+        XCTAssertEqual(to.x, 0.6, accuracy: 0.01)
+    }
+
+    func testVerticalSnaps() throws {
+        let points = [0.2, 0.35, 0.5, 0.65].map { CGPoint(x: 0.4, y: $0) }
+        let shape = try XCTUnwrap(BrushShapeClassifier.classify(points))
+        guard case let .line(from, to) = shape else { return XCTFail("expected line, got \(shape)") }
+        XCTAssertEqual(from.x, to.x, accuracy: 0.0001)
+        XCTAssertEqual(from.x, 0.4, accuracy: 0.01)
+    }
+
+    func testDiagonalStaysFreehand() {
+        let points = [0.2, 0.3, 0.4, 0.5, 0.6].map { CGPoint(x: $0, y: $0) }
+        XCTAssertNil(BrushShapeClassifier.classify(points))
+    }
+
+    func testWobblyLineStaysFreehand() {
+        var points: [CGPoint] = []
+        for index in 0 ..< 10 {
+            points.append(CGPoint(x: 0.2 + Double(index) * 0.04, y: 0.5 + (index % 2 == 0 ? 0.05 : -0.05)))
+        }
+        XCTAssertNil(BrushShapeClassifier.classify(points), "zigzag is no line")
+    }
+
+    func testShortStrokeAndDotsStayFreehand() {
+        XCTAssertNil(BrushShapeClassifier.classify([]))
+        XCTAssertNil(BrushShapeClassifier.classify([CGPoint(x: 0.5, y: 0.5)]))
+        XCTAssertNil(BrushShapeClassifier.classify([CGPoint(x: 0.5, y: 0.5), CGPoint(x: 0.51, y: 0.5)]))
+    }
+
+    func testScreenCircleFitsEllipse() throws {
+        // Screen circle: normalized ry stretched by the frame aspect.
+        var points: [CGPoint] = []
+        for step in 0 ... 24 {
+            let angle = Double(step) * 2 * Double.pi / 24
+            points.append(CGPoint(x: 0.5 + 0.1 * cos(angle), y: 0.5 + 0.1 * 16 / 9 * sin(angle)))
+        }
+        let shape = try XCTUnwrap(BrushShapeClassifier.classify(points))
+        guard case let .ellipse(center, rx, ry) = shape else { return XCTFail("expected ellipse, got \(shape)") }
+        XCTAssertEqual(center.x, 0.5, accuracy: 0.01)
+        XCTAssertEqual(center.y, 0.5, accuracy: 0.01)
+        XCTAssertEqual(rx, 0.1, accuracy: 0.01)
+        XCTAssertEqual(ry, 0.1 * 16 / 9, accuracy: 0.01)
+    }
+
+    func testOpenCShapeStaysFreehand() {
+        var points: [CGPoint] = []
+        for step in 0 ... 18 {
+            let angle = Double(step) * 1.5 * Double.pi / 18
+            points.append(CGPoint(x: 0.5 + 0.1 * cos(angle), y: 0.5 + 0.1 * 16 / 9 * sin(angle)))
+        }
+        XCTAssertNil(BrushShapeClassifier.classify(points), "three-quarter arc is no loop")
+    }
+
+    func testOutAndBackStaysFreehand() {
+        let out = [0.2, 0.3, 0.4, 0.5, 0.6].map { CGPoint(x: $0, y: 0.5) }
+        let back = [0.5, 0.4, 0.3, 0.2].map { CGPoint(x: $0, y: 0.5) }
+        XCTAssertNil(BrushShapeClassifier.classify(out + back), "retrace is no loop")
+    }
+
+    func testTinyLoopStaysFreehand() {
+        var points: [CGPoint] = []
+        for step in 0 ... 12 {
+            let angle = Double(step) * 2 * Double.pi / 12
+            points.append(CGPoint(x: 0.5 + 0.01 * cos(angle), y: 0.5 + 0.01 * sin(angle)))
+        }
+        XCTAssertNil(BrushShapeClassifier.classify(points), "scribble dots don't become ellipses")
+    }
+
+    func testSampledLineHasTwoEndpoints() throws {
+        let sampled = BrushShapeClassifier.sampledPoints(for: .line(from: CGPoint(x: 0.1, y: 0.2), to: CGPoint(x: 0.3, y: 0.2)))
+        XCTAssertEqual(sampled.count, 2)
+        XCTAssertEqual(try XCTUnwrap(sampled.first), CGPoint(x: 0.1, y: 0.2))
+        XCTAssertEqual(try XCTUnwrap(sampled.last), CGPoint(x: 0.3, y: 0.2))
+    }
+
+    func testSampledEllipseHasPerimeterPoints() {
+        let sampled = BrushShapeClassifier.sampledPoints(for: .ellipse(center: CGPoint(x: 0.5, y: 0.5), rx: 0.1, ry: 0.2))
+        XCTAssertEqual(sampled.count, 48)
+        for point in sampled {
+            let dx = (point.x - 0.5) / 0.1, dy = (point.y - 0.5) / 0.2
+            XCTAssertEqual(dx * dx + dy * dy, 1, accuracy: 0.001)
+        }
     }
 }

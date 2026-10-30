@@ -9,12 +9,33 @@ enum CardOverlayPosition: String, CaseIterable, Codable, Sendable, Hashable {
     case bottom
     case left
     case right
+    /// Video + Card: the whole camera frame aspect-fit into its own tile
+    /// beside the card panel — nothing is ever covered.
+    case sideBySide
 
     var displayName: String {
         switch self {
         case .bottom: "Bottom"
         case .left: "Left"
         case .right: "Right"
+        case .sideBySide: "Video + Card"
+        }
+    }
+}
+
+/// Card panel placement inside Video + Card mode: the video tile takes
+/// the opposite side (top half for a bottom panel). Only `.sideBySide`
+/// reads it; other positions ignore it.
+enum CardPanelPosition: String, CaseIterable, Codable, Sendable, Hashable {
+    case left
+    case right
+    case bottom
+
+    var displayName: String {
+        switch self {
+        case .left: "Left"
+        case .right: "Right"
+        case .bottom: "Bottom"
         }
     }
 }
@@ -69,6 +90,9 @@ struct ProgramOverlay: Sendable, Equatable {
     var card: PresentationCard?
     var isVisible: Bool
     var position: CardOverlayPosition = .bottom
+    /// Card panel placement in Video + Card mode (ignored otherwise).
+    /// Default right = video left, the original Video + Card layout.
+    var cardPanel: CardPanelPosition = .right
     /// Fullscreen card; collapsing restores `position`.
     var isExpanded: Bool = false
     /// Picture zoom (1.0 = aspect-fit, up to 4× centered on the picture box).
@@ -78,6 +102,11 @@ struct ProgramOverlay: Sendable, Equatable {
     /// listening state in the output window: green, amber in the last
     /// minute.
     var commandWindowRemaining: TimeInterval? = nil
+    /// 1-based position of the shown card in its deck (nil = unknown):
+    /// burned into the feed as an "N/M" corner badge so the presenter
+    /// sees where they are.
+    var cardNumber: Int? = nil
+    var cardCount: Int = 0
 }
 
 /// Freehand stroke in normalized video coordinates (origin lower-left).

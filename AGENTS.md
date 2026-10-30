@@ -140,3 +140,99 @@ work and is currently synced to `main`. Tags `virtual-camera-works`
   extension version bump (never `make clean` between iterations);
   Center Stage switch is class-level `centerStageControlMode` /
   `isCenterStageEnabled`, restored to `.user` on stop.
+
+## Branch visual-pedagogy (2026-10-29) — ACTIVE WORK HERE
+
+Spec: docs/visual_Pedagocical_generator.md (untracked, user's file).
+Goal: AI Visual Education Studio — import educational texts (paste/PDF/
+Markdown/TXT/Jupyter-as-data), plan illustrated lessons via Muse Spark,
+render artwork via Muse Image, review/edit, save to the existing
+Presentation Catalog, present over the existing video/virtual-camera/MP4
+pipeline. The spec doc is the authorizing milestone spec for cloud AI
+(the standing rule requires one); webcam frames stay local, only
+user-approved documents go to Meta, API key in Keychain.
+
+- Reality checks done: Meta Model API is real
+  (`https://api.meta.ai/v1`, OpenAI-compatible: `muse-spark-1.3`,
+  `muse-image-1.0`; key from dev.meta.ai). App is NOT sandboxed, so no
+  network entitlement needed. No prior AI/network code existed.
+- Slice 1 DONE (uncommitted): `GestureCue/AI/` (GenerationModels,
+  MetaModelClient, CredentialStore) + GenerationTests — settings enums,
+  LessonPlan/DiagramSpec Codable, OpenAI-compatible Spark/Image client
+  behind HTTPTransport seam, Keychain + in-memory credential stores.
+  209/209 green. Registered in pbxproj (...280-288). Live-verified with
+  user's key (META_API_KEY in untracked repo-root .env): Spark envelope
+  matches parser; ~150+ reasoning tokens precede content (never cap
+  max_tokens on plans; UI must show progress); images are b64 WEBP
+  (decodable as-is; ignore requested size, got 1600px).
+- Slices 2+3 DONE (uncommitted, Build 47 staged): Studio window
+  (import/settings/key/approval/progress/drafts/save), generator actor,
+  illustration composer, 4-kind diagram renderer, catalog collections.
+  231/231 green. Prompt constrains diagram kinds (live-verified).
+- Slice 4 = USER manual gate (Build 47 Studio, their key in Keychain):
+  MVP-A history + MVP-B fractions per PROGRESS checklist; then commit +
+  push + tag (ask). Honest gaps: no visual layout editor (resize/
+  reposition), no cross-deck card move/duplicate; PDF import path has no
+  fixture test (verify once manually).
+- Build 48 FIX (staged): Studio drafts wiped on main-window changes —
+  view model now App-owned (survives window switches).
+- Build 49 (staged): lesson card fit — bottom side-by-side picture
+  layout, message shrink-to-fit, fit-aware prompts (220-char bodies,
+  split rule, standalone bodies), Bible/Religious subject, concept kept
+  in detail. 236/236 green. User re-verifies incl. Bible passage run.
+- Build 50 (staged): deck round-trip — "Edit Existing Deck…" re-imports
+  with artwork+prompts; cards persist prompt + raw base image; per-draft
+  prompt editing with dirty marker; "Regenerate Changed" refreshes only
+  edited prompts; "Refresh Text" re-composes base art free. 240/240.
+  User verifies round-trip flow.
+- Privacy invariants for this branch: network only after explicit
+  per-lesson approval; source treated as data; generated scenes never
+  presented as documentary photos; no sign-language instruction without
+  qualified review.
+- Build 51 (2026-10-30, staged, UNCOMMITTED): hackathon readiness
+  verification done — live E2E both MVP scenarios green via temp probe
+  (removed; artifacts in /tmp/mvp, key file deleted), 2 fixes
+  (diagram band skip + diagramKind round-trip; cancel passthrough),
+  244/244 green. Docs: README Studio section, MANUAL-TEST-STUDIO.md
+  (ST-01..12), EXTERNAL-REVIEW → Build 51. Resume: user runs ST-01..12
+  + VC-01..07 on Build 51, then commit + push + tag (ask).
+- Build 52: approval tick resets when source text/title edited
+  (ST-02 code-check edge). Build 53 (staged, UNCOMMITTED): card
+  titles wrap to 3 lines on narrow panels instead of truncating.
+  247/247 green. User gate restarts on Build 53 (ST-01..02 quick
+  redo + rest of ST/VC).
+- Build 54 (staged, UNCOMMITTED): fix-issues.md — single Studio
+  window; New + ask-to-save (dirty tracking, canSave gate, cancel
+  race closed); Studio menus list AI decks only (prompt
+  provenance). 248/248 green. Split-view parked in
+  docs/PENDING-FEATURES.md (awaiting approval). User verifies
+  3 fixes + runs gate on Build 54.
+- Build 55 (staged, UNCOMMITTED): fix-issues #4 — imports clear stale
+  drafts (adopt clears + cancels generation; guarded import confirm
+  over unsaved drafts). 248/248. User verifies + runs gate on 55.
+- Build 56 (staged, UNCOMMITTED): fix-issues #5 — main-window close
+  dismisses Studio, stops recording/output/camera/virtual stream
+  (drafts survive in memory; Dock-click reopens). 248/248. User
+  verifies + runs gate on 56.
+- Build 57 (staged, UNCOMMITTED): faithful presentation splits — new
+  Fidelity (PDF/PP → verbatim split prompt, temp 0.1, empty art
+  prompts, null diagrams); generator skips image API for prompt-less
+  cards; native .pptx/.ppsx text extraction (PptxTextExtractor, no
+  deps; Apple one-shot zlib = raw deflate). Live-verified prompt
+  compliance 3/3. 256/256. User verifies PP import + faithful run,
+  then gate on 57.
+- Build 58 (staged, UNCOMMITTED): next_step_1 gate — PPTX security
+  caps + tests; strict plan schema + timeout/retry/messages; mode
+  picker + fidelity verdicts; zero warnings; HACKATHON.md,
+  RELEASE-CHECKLIST.md, gate Part 3. 273/273. New-features parked.
+  User runs gate + flows H/F/P on 58, then commit/push/tag (ask).
+- Build 59: "Diverse" collection in Studio menu. Build 60 (staged,
+  UNCOMMITTED): card "N/M" corner badge on video (new-features #2).
+  275/275. Straight-line brush still open. User runs gate on 60.
+- Build 61 (staged, UNCOMMITTED): Suggest-collection button (model
+  categorises excerpt; new buckets created + persisted; approval
+  gated). Live-verified match + new-category paths. 278/278. User
+  runs gate on 61.
+- Build 62 (staged, UNCOMMITTED): Video + Card side-by-side position
+  (whole camera aspect-fit in left tile, card right 40%). 282/282.
+  User runs gate on 62.

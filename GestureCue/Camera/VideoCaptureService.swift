@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreGraphics
 import CoreMedia
 import Foundation
 
@@ -57,6 +58,15 @@ enum CaptureResolution: String, CaseIterable, Sendable {
         switch self {
         case .hd720: .hd1280x720
         case .hd1080: .hd1920x1080
+        }
+    }
+
+    /// Nominal frame size (both presets are 16:9; the mouse-brush
+    /// mapping only depends on the aspect).
+    var pixelSize: CGSize {
+        switch self {
+        case .hd720: CGSize(width: 1280, height: 720)
+        case .hd1080: CGSize(width: 1920, height: 1080)
         }
     }
 }

@@ -105,8 +105,13 @@ struct CameraPanelView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.black)
-                ProgramOutputView(layer: viewModel.programOutput.layer)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                ProgramOutputView(
+                    layer: viewModel.programOutput.layer,
+                    videoSize: camera.resolution.pixelSize,
+                    mirrored: viewModel.outputMirrored,
+                    onBrush: { viewModel.mouseBrush($0) }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .frame(minHeight: 140)
             .accessibilityElement(children: .ignore)
@@ -117,6 +122,14 @@ struct CameraPanelView: View {
                 }
             }
             .pickerStyle(.segmented)
+            if viewModel.cardPosition == .sideBySide {
+                Picker("Card panel", selection: $viewModel.cardPanelPosition) {
+                    ForEach(CardPanelPosition.allCases, id: \.self) { panel in
+                        Text(panel.displayName).tag(panel)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
             Picker("Paint color", selection: $viewModel.paintColor) {
                 ForEach(HighlightColor.allCases, id: \.self) { color in
                     Text(color.displayName).tag(color)

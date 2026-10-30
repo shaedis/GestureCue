@@ -52,6 +52,13 @@ final class AppViewModel: ObservableObject {
             syncOverlay()
         }
     }
+    /// Card panel placement in Video + Card mode (ignored otherwise).
+    @Published var cardPanelPosition: CardPanelPosition {
+        didSet {
+            UserDefaults.standard.set(cardPanelPosition.rawValue, forKey: Self.cardPanelKey)
+            syncOverlay()
+        }
+    }
     @Published var paintColor: HighlightColor {
         didSet {
             UserDefaults.standard.set(paintColor.rawValue, forKey: Self.highlightColorKey)
@@ -93,11 +100,13 @@ final class AppViewModel: ObservableObject {
     private static let mappingKey = "GestureCue.gestureMapping.v5"
     private static let holdDurationKey = "GestureCue.holdDuration"
     private static let cardPositionKey = "GestureCue.cardPosition"
+    private static let cardPanelKey = "GestureCue.cardPanelPosition"
     private static let highlightColorKey = "GestureCue.highlightColor"
     private static let mirrorModeKey = "GestureCue.outputMirrorMode"
     private static let detectionPausedKey = "GestureCue.detectionPaused"
     private var cancellations = Set<AnyCancellable>()
     private var commandWindow = CommandWindow()
+    private var lastPaintActivity = Date.distantPast
     private var windowTask: Task<Void, Never>?
     private var virtualCameraTask: Task<Void, Never>?
     /// Listening-dot state burned into the program feed. Synced to the
@@ -161,6 +170,9 @@ final class AppViewModel: ObservableObject {
         self.cardPosition = CardOverlayPosition(
             rawValue: UserDefaults.standard.string(forKey: Self.cardPositionKey) ?? ""
         ) ?? .bottom
+        self.cardPanelPosition = CardPanelPosition(
+            rawValue: UserDefaults.standard.string(forKey: Self.cardPanelKey) ?? ""
+        ) ?? .right
         self.paintColor = HighlightColor(
             rawValue: UserDefaults.standard.string(forKey: Self.highlightColorKey) ?? ""
         ) ?? .yellow
@@ -208,6 +220,12 @@ final class AppViewModel: ObservableObject {
             armCommandWindow()
         } else {
             setPaused(true)
+        }
+        // Paint/brush strokes are user activity too: without this the
+        // window idles out mid-brush and painting silently parks.
+        paintController.sink = { [compositor, weak self] layer in
+            compositor.updatePaint(layer)
+            Task { [weak self] in await self?.notePaintActivity() }
         }
     }
 
@@ -317,6 +335,28 @@ final class AppViewModel: ObservableObject {
         importError = nil
     }
 
+    /// Saves an approved AI-generated lesson as a new catalog deck and
+    /// selects it for presenting. The Studio's guidance travels along
+    /// so re-opened decks regenerate with the same instructions.
+    func saveGeneratedLesson(title: String, collection: String?, cards: [PresentationCard], aiInstructions: String? = nil) {
+        let trimmed = collection?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let guidance = aiInstructions?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let deck = Presentation(name: title, cards: cards,
+                                collection: trimmed?.isEmpty == false ? trimmed : nil,
+                                studioOrigin: true,
+                                aiInstructions: guidance?.isEmpty == false ? guidance : nil)
+        library.addDeck(deck)
+        saveLibrary()
+        selectPresentation(deck.id)
+    }
+
+    func setPresentationCollection(_ id: UUID, collection: String?) {
+        guard let index = library.presentations.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = collection?.trimmingCharacters(in: .whitespacesAndNewlines)
+        library.presentations[index].collection = trimmed?.isEmpty == false ? trimmed : nil
+        saveLibrary()
+    }
+
     func addCardToActiveDeck() {
         store.addCard(PresentationCard(title: "New Card", message: ""))
         afterDeckContentChanged()
@@ -370,6 +410,17 @@ final class AppViewModel: ObservableObject {
         expandedPipeline.setEnabled(false)
         outputWindow.hide()
         isOutputRunning = false
+    }
+
+    /// Main window closed: stop recording, output, capture, and the
+    /// virtual-camera stream so no orphan window or invisible capture
+    /// survives (the view dismisses the Studio window itself). Studio
+    /// drafts stay in memory; Dock-click reopens the main window.
+    func mainWindowClosed() {
+        stopRecording()
+        stopOutput()
+        camera.stop()
+        setVirtualCameraEnabled(false)
     }
 
     private func updateOutputMirroring() {
@@ -434,9 +485,12 @@ final class AppViewModel: ObservableObject {
     private func syncOverlay() {
         compositor.updateOverlay(ProgramOverlay(
             card: store.currentCard, isVisible: store.isVisible, position: cardPosition,
+            cardPanel: cardPanelPosition,
             isExpanded: store.isExpanded,
             zoomScale: store.zoomScale(for: store.currentCard?.id),
-            commandWindowRemaining: detectionPaused ? nil : commandWindowRemaining
+            commandWindowRemaining: detectionPaused ? nil : commandWindowRemaining,
+            cardNumber: store.currentCard == nil ? nil : store.currentIndex + 1,
+            cardCount: store.cards.count
         ))
     }
 
@@ -472,13 +526,33 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    /// A fired gesture command pushes window expiry out.
+    /// User activity pushes window expiry out.
     private func registerCommandActivity() {
         guard !detectionPaused else { return }
         commandWindow.registerActivity(at: Date())
         commandWindowRemaining = commandWindow.remaining(at: Date())
         lastDotState = .green
         syncOverlay()
+    }
+
+    /// A paint/brush layer change pushes window expiry out (throttled:
+    /// strokes push per frame, but the deadline only needs a nudge).
+    /// Called on the main actor from the paint sink.
+    private func notePaintActivity() {
+        let now = Date()
+        guard now.timeIntervalSince(lastPaintActivity) >= 2 else { return }
+        lastPaintActivity = now
+        registerCommandActivity()
+    }
+
+    /// Mouse brush on the program monitor. Explicit UI input: works
+    /// whether or not the command window is open, like buttons/keys.
+    func mouseBrush(_ event: MouseBrushEvent) {
+        switch event {
+        case let .down(point): paintController.mouseBrushDown(at: point)
+        case let .moved(point): paintController.mouseBrushMoved(to: point)
+        case .up: paintController.mouseBrushUp()
+        }
     }
 
     private func setPaused(_ paused: Bool) {

@@ -22,6 +22,11 @@ struct FingerPaintConfig: Sendable, Equatable {
     var maxPointsPerStroke: Int = 1000
     /// Seconds a finished brush stroke takes to fade away.
     var brushFadeDuration: TimeInterval = 1.5
+    /// Snap finished two-finger strokes to clean horizontal/vertical
+    /// lines and ellipses (resolved back into points, so fading and
+    /// rendering need no shape support).
+    var shapeSnapping = true
+    var shapeConfig = BrushShapeClassifier.Config()
 }
 
 /// Tracks the index fingertip and turns thumb+index pinches into freehand
@@ -45,6 +50,7 @@ final class FingerPaintController: @unchecked Sendable {
     private var smoothed: SIMD2<Float>?
     private var brush = BrushStrokeTracker()
     private var brushStrokes: [BrushStroke] = []
+    private var mouseBrushStrokes: [BrushStroke] = []
     private var lastPushed = PaintLayer()
 
     /// Called (on the caller's thread) whenever the visible layer changes.
@@ -130,7 +136,7 @@ final class FingerPaintController: @unchecked Sendable {
         guard mode == .paint else { return false }
         guard let pose,
               let tip = pose.point(.indexTip),
-              let thumb = pose.point(.thumbTip),
+              pose.point(.thumbTip) != nil,
               let wrist = pose.point(.wrist),
               let middleMCP = pose.point(.middleMCP),
               pose.confidence(.indexTip) >= config.minJointConfidence,
@@ -222,13 +228,64 @@ final class FingerPaintController: @unchecked Sendable {
             }
         } else if let last = brushStrokes.indices.last, brushStrokes[last].endedAt == nil {
             brushStrokes[last].endedAt = now
+            if config.shapeSnapping,
+               let shape = BrushShapeClassifier.classify(brushStrokes[last].stroke.points, config: config.shapeConfig)
+            {
+                brushStrokes[last].stroke.points = BrushShapeClassifier.sampledPoints(for: shape)
+            }
         }
-        brushStrokes.removeAll { stroke in
-            guard let ended = stroke.endedAt else { return false }
-            return now.timeIntervalSince(ended) >= stroke.fadeDuration
-        }
+        pruneBrushLocked(now: now)
         pushLocked()
         return brush.engaged
+    }
+
+    /// Mouse-driven brush stroke on the program monitor: explicit UI
+    /// input, so it works even while detection is paused (like buttons
+    /// and keys). Shares fade, pruning, and shape-snapping semantics
+    /// with the two-finger brush; both can be live at once.
+    func mouseBrushDown(at point: CGPoint) {
+        lock.withLock {
+            let now = Date()
+            endMouseBrushLocked(at: now)
+            pruneBrushLocked(now: now)
+            mouseBrushStrokes.append(BrushStroke(
+                stroke: PaintStroke(color: color, points: [point]),
+                endedAt: nil,
+                fadeDuration: config.brushFadeDuration
+            ))
+            pushLocked()
+        }
+    }
+
+    /// Appends to the live mouse stroke; no-op unless the button is down.
+    /// Prunes expired strokes, so the layer stays fresh between frames.
+    func mouseBrushMoved(to point: CGPoint) {
+        lock.withLock {
+            let now = Date()
+            pruneBrushLocked(now: now)
+            guard let last = mouseBrushStrokes.indices.last,
+                  mouseBrushStrokes[last].endedAt == nil
+            else { return }
+            if let prev = mouseBrushStrokes[last].stroke.points.last {
+                let moved = hypot(point.x - prev.x, point.y - prev.y)
+                guard moved >= CGFloat(config.minSpacing),
+                      mouseBrushStrokes[last].stroke.points.count < config.maxPointsPerStroke
+                else { return }
+            }
+            mouseBrushStrokes[last].stroke.points.append(point)
+            pushLocked()
+        }
+    }
+
+    /// Ends the live mouse stroke (snapping it when enabled); no-op
+    /// unless the button is down.
+    func mouseBrushUp() {
+        lock.withLock {
+            let now = Date()
+            endMouseBrushLocked(at: now)
+            pruneBrushLocked(now: now)
+            pushLocked()
+        }
     }
 
     // MARK: - Private (lock held)
@@ -238,6 +295,29 @@ final class FingerPaintController: @unchecked Sendable {
     private func clearBrushLocked() {
         brush.reset()
         brushStrokes = []
+        mouseBrushStrokes = []
+    }
+
+    private func endMouseBrushLocked(at now: Date) {
+        guard let last = mouseBrushStrokes.indices.last,
+              mouseBrushStrokes[last].endedAt == nil
+        else { return }
+        mouseBrushStrokes[last].endedAt = now
+        if config.shapeSnapping,
+           let shape = BrushShapeClassifier.classify(mouseBrushStrokes[last].stroke.points, config: config.shapeConfig)
+        {
+            mouseBrushStrokes[last].stroke.points = BrushShapeClassifier.sampledPoints(for: shape)
+        }
+    }
+
+    private func pruneBrushLocked(now: Date) {
+        brushStrokes.removeAll { Self.isFaded($0, at: now) }
+        mouseBrushStrokes.removeAll { Self.isFaded($0, at: now) }
+    }
+
+    private static func isFaded(_ stroke: BrushStroke, at now: Date) -> Bool {
+        guard let ended = stroke.endedAt else { return false }
+        return now.timeIntervalSince(ended) >= stroke.fadeDuration
     }
 
     private func commitLocked() {
@@ -256,7 +336,7 @@ final class FingerPaintController: @unchecked Sendable {
         }
         let layer = PaintLayer(
             strokes: strokes,
-            brushStrokes: brushStrokes,
+            brushStrokes: brushStrokes + mouseBrushStrokes,
             pointer: smoothed.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
                 ?? brush.point.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) },
             pointerColor: color

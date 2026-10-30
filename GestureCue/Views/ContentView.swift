@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         HSplitView {
@@ -13,5 +15,13 @@ struct ContentView: View {
                 .frame(minWidth: 380)
         }
         .padding(12)
+        .toolbar {
+            Button("AI Studio") { openWindow(id: "ai-studio") }
+                .accessibilityLabel("Open AI Visual Education Studio")
+        }
+        .onDisappear {
+            dismissWindow(id: "ai-studio")
+            viewModel.mainWindowClosed()
+        }
     }
 }
