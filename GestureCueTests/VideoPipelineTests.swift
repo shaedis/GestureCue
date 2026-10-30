@@ -343,6 +343,267 @@ final class VideoPipelineTests: XCTestCase {
         XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.70 ..< 0.82, where: isRed), 500)
     }
 
+    func testBottomCardSplitsSideBySide() throws {
+        let banner = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .bottom)
+        let layout = CardOverlayCompositor.contentLayout(
+            banner: banner, margin: 51.2, messageTop: banner.maxY - 60, messageSize: 27,
+            hasMessageText: true, hasImage: true, position: .bottom, expanded: false
+        )
+        let message = layout.messageRect
+        let box = try XCTUnwrap(layout.pictureBox)
+        XCTAssertLessThan(message.maxX, box.minX, "text left, picture right")
+        XCTAssertEqual(message.height, box.height, accuracy: 0.01)
+        XCTAssertGreaterThan(box.width, 140, "picture keeps usable width")
+        XCTAssertTrue(banner.contains(message) && banner.contains(box))
+    }
+
+    func testBottomCardWithoutImageKeepsFullWidth() {
+        let banner = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .bottom)
+        let layout = CardOverlayCompositor.contentLayout(
+            banner: banner, margin: 51.2, messageTop: banner.maxY - 60, messageSize: 27,
+            hasMessageText: true, hasImage: false, position: .bottom, expanded: false
+        )
+        XCTAssertNil(layout.pictureBox)
+        XCTAssertEqual(layout.messageRect.width, banner.width - 51.2 * 1.2, accuracy: 0.01)
+    }
+
+    func testSideCardStacksTextOverPicture() throws {
+        let banner = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .left)
+        let layout = CardOverlayCompositor.contentLayout(
+            banner: banner, margin: 51.2, messageTop: banner.maxY - 60, messageSize: 27,
+            hasMessageText: true, hasImage: true, position: .left, expanded: false
+        )
+        let box = try XCTUnwrap(layout.pictureBox)
+        XCTAssertGreaterThan(layout.messageRect.minY, box.maxY, "message above picture")
+        XCTAssertEqual(layout.messageRect.width, box.width, accuracy: 0.01)
+    }
+
+    func testBottomPanelSplitsSideBySide() throws {
+        let banner = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .bottom)
+        let layout = CardOverlayCompositor.contentLayout(
+            banner: banner, margin: 51.2, messageTop: banner.maxY - 60, messageSize: 27,
+            hasMessageText: true, hasImage: true, position: .sideBySide, cardPanel: .bottom, expanded: false
+        )
+        let message = layout.messageRect
+        let box = try XCTUnwrap(layout.pictureBox)
+        XCTAssertLessThan(message.maxX, box.minX, "text left, picture right")
+        XCTAssertEqual(message.height, box.height, accuracy: 0.01)
+        XCTAssertTrue(banner.contains(message) && banner.contains(box))
+    }
+
+    func testMessageFitsDetectsOverflow() {
+        let rect = CGRect(x: 0, y: 0, width: 400, height: 60)
+        XCTAssertTrue(CardOverlayCompositor.messageFits("Short", size: 27, rect: rect))
+        XCTAssertFalse(CardOverlayCompositor.messageFits(String(repeating: "Long text here. ", count: 40), size: 27, rect: rect))
+        XCTAssertTrue(CardOverlayCompositor.messageFits("", size: 27, rect: rect))
+    }
+
+    func testTitleWrapsInsteadOfTruncating() {
+        // Side-panel text width at 720p: 36% of 1280 minus margins.
+        let banner = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .left)
+        let maxWidth = banner.width - 51.2 * 1.2
+        let title = "The quick brown fox jumps over the lazy dog near the river"
+        let lines = CardOverlayCompositor.wrappedTitleLines(title, fontSize: 39.6, maxWidth: maxWidth)
+        XCTAssertGreaterThan(lines.count, 1, "long title wraps on narrow panels")
+        XCTAssertLessThanOrEqual(lines.count, 3)
+        for line in lines {
+            XCTAssertLessThanOrEqual(
+                CardOverlayCompositor.titleLineWidth(line, fontSize: 39.6), maxWidth + 0.5,
+                "each wrapped line fits: \(line)"
+            )
+        }
+        let stripped = { (s: String) in s.replacingOccurrences(of: " ", with: "") }
+        XCTAssertEqual(stripped(lines.joined()), stripped(title), "wrapping loses no text")
+    }
+
+    func testTitleTruncatesPastMaxLines() {
+        let lines = CardOverlayCompositor.wrappedTitleLines(
+            String(repeating: "Long title words ", count: 20), fontSize: 40, maxWidth: 300
+        )
+        XCTAssertEqual(lines.count, 3)
+        XCTAssertTrue(lines.last?.hasSuffix("…") ?? false)
+        XCTAssertEqual(CardOverlayCompositor.wrappedTitleLines("", fontSize: 40, maxWidth: 300), [])
+        XCTAssertEqual(CardOverlayCompositor.wrappedTitleLines("Short", fontSize: 40, maxWidth: 300), ["Short"])
+    }
+
+    func testNumberBadgeFormatting() {
+        XCTAssertEqual(CardOverlayCompositor.numberBadge(number: 3, total: 8), "3/8")
+        XCTAssertNil(CardOverlayCompositor.numberBadge(number: nil, total: 8))
+        XCTAssertNil(CardOverlayCompositor.numberBadge(number: 0, total: 8))
+        XCTAssertNil(CardOverlayCompositor.numberBadge(number: 1, total: 0))
+    }
+
+    func testSideBySideTilesLayout() {
+        let video = CardOverlayCompositor.videoRect(width: 1280, height: 720, position: .sideBySide)
+        let card = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .sideBySide)
+        let frame = CGRect(x: 0, y: 0, width: 1280, height: 720)
+        XCTAssertTrue(frame.contains(video) && frame.contains(card))
+        XCTAssertFalse(video.intersects(card))
+        XCTAssertLessThan(video.maxX, card.minX, "video left, card right")
+        let fitted = CardOverlayCompositor.aspectFit(CGSize(width: 1280, height: 720), in: video)
+        XCTAssertTrue(video.insetBy(dx: -1, dy: -1).contains(fitted), "whole frame fits inside the tile")
+        for position in [CardOverlayPosition.bottom, .left, .right] {
+            XCTAssertEqual(CardOverlayCompositor.videoRect(width: 1280, height: 720, position: position), frame)
+        }
+        XCTAssertEqual(
+            CardOverlayCompositor.videoRect(width: 1280, height: 720, position: .sideBySide, expanded: true), frame,
+            "expanded keeps fullscreen video under the card"
+        )
+    }
+
+    func testCardPanelLeftMirrorsRight() {
+        let frame = CGRect(x: 0, y: 0, width: 1280, height: 720)
+        let video = CardOverlayCompositor.videoRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .left)
+        let card = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .left)
+        let rightVideo = CardOverlayCompositor.videoRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .right)
+        XCTAssertTrue(frame.contains(video) && frame.contains(card))
+        XCTAssertFalse(video.intersects(card))
+        XCTAssertLessThan(card.maxX, video.minX, "card left, video right")
+        XCTAssertEqual(video.width, rightVideo.width, accuracy: 0.01)
+        XCTAssertEqual(video.maxX, 1280 - 1280 * 0.04, accuracy: 0.01)
+        XCTAssertEqual(card.minX, 1280 * 0.04, accuracy: 0.01)
+        let fitted = CardOverlayCompositor.aspectFit(CGSize(width: 1280, height: 720), in: video)
+        XCTAssertTrue(video.insetBy(dx: -1, dy: -1).contains(fitted), "whole frame fits inside the tile")
+    }
+
+    func testCardPanelBottomSplitsHorizontally() {
+        let frame = CGRect(x: 0, y: 0, width: 1280, height: 720)
+        let video = CardOverlayCompositor.videoRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .bottom)
+        let card = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .bottom)
+        XCTAssertTrue(frame.contains(video) && frame.contains(card))
+        XCTAssertFalse(video.intersects(card))
+        XCTAssertLessThan(card.maxY, video.minY, "card panel below, video on top")
+        XCTAssertEqual(card.minX, 1280 * 0.04, accuracy: 0.01)
+        XCTAssertEqual(card.maxX, 1280 - 1280 * 0.04, accuracy: 0.01)
+        let fitted = CardOverlayCompositor.aspectFit(CGSize(width: 1280, height: 720), in: video)
+        XCTAssertTrue(video.insetBy(dx: -1, dy: -1).contains(fitted), "whole frame fits inside the tile")
+    }
+
+    /// Camera frame with a bright left half and dark right half.
+    private func twoToneFrame() -> CVPixelBuffer? {
+        guard let buffer = makePixelBuffer() else { return nil }
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return nil }
+        let width = CVPixelBufferGetWidth(buffer)
+        let height = CVPixelBufferGetHeight(buffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        for y in 0 ..< height {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in 0 ..< width {
+                let v: UInt8 = x < width / 2 ? 255 : 0
+                row[x * 4 + 0] = v
+                row[x * 4 + 1] = v
+                row[x * 4 + 2] = v
+                row[x * 4 + 3] = 255
+            }
+        }
+        return buffer
+    }
+
+    func testSideBySideShowsWholeVideoBesideCard() throws {
+        let card = PresentationCard(title: "Longer Title Here", message: "A longer body of text for glyph counting.")
+        let frame = try XCTUnwrap(twoToneFrame())
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .sideBySide))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let isBright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        let isDark: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r < 50 && g < 50 && b < 50 }
+        // Video tile: bright content mid-left, letterbox bars top.
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.4 ..< 0.6, xFraction: 0.05 ..< 0.2, where: isBright), 200)
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.0 ..< 0.12, xFraction: 0.05 ..< 0.4, where: isDark), 500)
+        // Card panel: text glyphs on the right.
+        XCTAssertGreaterThan(brightPixelCount(output, xFraction: 0.6 ..< 1.0), 100)
+    }
+
+    func testSideBySideMirroredFlipsVideo() throws {
+        let card = PresentationCard(title: "T", message: "M")
+        let frame = try XCTUnwrap(twoToneFrame())
+        let compositor = CardOverlayCompositor()
+        compositor.setMirrored(true)
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .sideBySide))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let isBright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        let isDark: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r < 50 && g < 50 && b < 50 }
+        // Mirrored: bright half moves to the tile's right side.
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.4 ..< 0.6, xFraction: 0.30 ..< 0.45, where: isBright), 200)
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.4 ..< 0.6, xFraction: 0.05 ..< 0.2, where: isDark), 1000)
+    }
+
+    func testSideBySideHiddenCardStaysFullscreen() throws {
+        let card = PresentationCard(title: "T", message: "M")
+        let frame = try XCTUnwrap(twoToneFrame())
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: false, position: .sideBySide))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Fullscreen passthrough: bright across the full height, no bars.
+        let topLeft = coloredPixelCount(output, yFraction: 0.0 ..< 0.15, xFraction: 0.05 ..< 0.4) { r, g, b in
+            r > 200 && g > 200 && b > 200
+        }
+        XCTAssertGreaterThan(topLeft, 1000)
+    }
+
+    func testCardPanelLeftShowsVideoBesideCard() throws {
+        let card = PresentationCard(title: "Longer Title Here", message: "A longer body of text for glyph counting.")
+        let frame = try XCTUnwrap(twoToneFrame())
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .sideBySide, cardPanel: .left))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let isBright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        // Mirrored layout: card glyphs left, video content right.
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.4 ..< 0.6, xFraction: 0.5 ..< 0.65, where: isBright), 200)
+        XCTAssertGreaterThan(brightPixelCount(output, xFraction: 0.0 ..< 0.4), 100)
+    }
+
+    func testCardPanelBottomShowsCardBelowVideo() throws {
+        let card = PresentationCard(title: "Longer Title Here", message: "A longer body of text for glyph counting.")
+        let frame = try XCTUnwrap(twoToneFrame())
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .sideBySide, cardPanel: .bottom))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let isBright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        // Video on top (bright camera-left inside the fitted tile).
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.1 ..< 0.4, xFraction: 0.32 ..< 0.48, where: isBright), 200)
+        // Card glyphs across the bottom panel.
+        XCTAssertGreaterThan(coloredPixelCount(output, yFraction: 0.55 ..< 0.9, xFraction: 0.0 ..< 1.0, where: isBright), 100)
+    }
+
+    func testCardNumberBadgeBurnsGlyphs() throws {
+        let card = PresentationCard(title: "T", message: "M")
+        func brightCount(number: Int?) throws -> Int {
+            let frame = try XCTUnwrap(makePixelBuffer())
+            let compositor = CardOverlayCompositor()
+            compositor.updateOverlay(ProgramOverlay(
+                card: card, isVisible: true, position: .bottom, cardNumber: number, cardCount: 8
+            ))
+            let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+            return brightPixelCount(output, xFraction: 0 ..< 1)
+        }
+        XCTAssertGreaterThan(
+            try brightCount(number: 3), try brightCount(number: nil),
+            "the badge adds glyphs to the frame"
+        )
+    }
+
+    func testLongTitleRendersOnSidePanels() throws {
+        let card = PresentationCard(
+            title: "The quick brown fox jumps over the lazy dog near the river",
+            message: "Body stays below the wrapped title."
+        )
+        // Full-height scan: side-panel titles sit at the top of the frame,
+        // outside the bottom-strip helper's region.
+        for position in [CardOverlayPosition.left, CardOverlayPosition.right] {
+            let frame = try XCTUnwrap(makePixelBuffer())
+            let compositor = CardOverlayCompositor()
+            compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: position))
+            let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+            XCTAssertGreaterThan(
+                brightPixelCount(output, xFraction: 0 ..< 1), 100,
+                "wrapped title glyphs at \(position)"
+            )
+        }
+    }
+
     func testZoomedPictureCoversMorePixels() throws {
         let card = PresentationCard(title: "Slide 2", message: "", imageData: makeTestImageData())
         func render(zoom: CGFloat) throws -> CVPixelBuffer {

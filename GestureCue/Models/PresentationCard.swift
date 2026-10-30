@@ -8,13 +8,27 @@ struct PresentationCard: Identifiable, Codable, Sendable, Equatable {
     var detail: String?
     /// Optional picture (PNG/JPEG bytes) shown below the texts.
     var imageData: Data?
+    /// Prompt that produced the artwork (nil for legacy/imported cards).
+    /// Round-trips through the Studio so only edited prompts regenerate.
+    var illustrationPrompt: String? = nil
+    /// Raw artwork before title/label composition (nil for legacy cards).
+    /// Lets text edits re-compose locally without a new API call.
+    var originalImageData: Data? = nil
+    /// Diagram kind when the artwork is a programmatic diagram (nil
+    /// otherwise). Round-trips so re-imported diagrams skip the title
+    /// band, which would cover their edge labels. Optional, so legacy
+    /// catalog files without the key still decode.
+    var diagramKind: String? = nil
 
-    init(id: UUID = UUID(), title: String, message: String, detail: String? = nil, imageData: Data? = nil) {
+    init(id: UUID = UUID(), title: String, message: String, detail: String? = nil, imageData: Data? = nil, illustrationPrompt: String? = nil, originalImageData: Data? = nil, diagramKind: String? = nil) {
         self.id = id
         self.title = title
         self.message = message
         self.detail = detail
         self.imageData = imageData
+        self.illustrationPrompt = illustrationPrompt
+        self.originalImageData = originalImageData
+        self.diagramKind = diagramKind
     }
 
     /// Manually authored sample cards for milestone 1 (no AI generation yet).

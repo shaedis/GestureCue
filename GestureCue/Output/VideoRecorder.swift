@@ -7,6 +7,13 @@ enum RecorderError: Error, Sendable {
     case alreadyRecording
 }
 
+/// An AVAssetWriter handed to exactly one `finishWriting` completion:
+/// after handoff nothing else touches that instance (the recorder's own
+/// slot is already nil), so the Sendable hole is safe by construction.
+private struct FinishingWriter: @unchecked Sendable {
+    let writer: AVAssetWriter
+}
+
 /// Records composited program frames to a video-only MP4 (no audio: the
 /// app never touches the mic). Fed from the video queue; appends are
 /// serialized on an internal queue and lock-guarded against `stop` from
@@ -156,13 +163,14 @@ final class VideoRecorder: @unchecked Sendable {
         input?.markAsFinished()
         cleanupLocked()
         lock.unlock()
+        let pending = FinishingWriter(writer: writer)
         writer.finishWriting { [weak self] in
             guard let self else { return }
-            if writer.status == .completed {
+            if pending.writer.status == .completed {
                 self.finish(.saved(url, droppedFrames: dropped))
             } else {
                 try? FileManager.default.removeItem(at: url)
-                self.finish(.failed(writer.error?.localizedDescription ?? "unknown encoding error"))
+                self.finish(.failed(pending.writer.error?.localizedDescription ?? "unknown encoding error"))
             }
         }
     }

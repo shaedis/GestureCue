@@ -19,15 +19,16 @@ and [docs/](docs/) for manual test checklists and the OBS/Zoom setup guide.
 
 ```sh
 make build   # compile
-make test    # 179 XCTest tests (run in an unsandboxed shell)
+make test    # 282 XCTest tests (run in an unsandboxed shell)
 make app     # stage build/GestureCue.app
 make open    # restart + open the staged app
 ```
 
 On `main` the app is ad-hoc signed ("Sign to Run Locally"), so it runs on
-your Mac without a paid developer team. This branch (`virtual-camera`) signs
-with team `X8YHS47G23` instead, because the camera extension requires a
-provisioning profile — `make` needs an unsandboxed shell for portal access.
+your Mac without a paid developer team. The `virtual-camera` and
+`visual-pedagogy` branches sign with team `X8YHS47G23` instead, because the
+camera extension requires a provisioning profile — `make` needs an
+unsandboxed shell for portal access.
 
 ## Camera permission
 
@@ -80,7 +81,7 @@ feed as a video-only MP4 to Movies ▸ GestureCue.
 
 Cards live in a presentation catalog (create/rename/delete decks, import PDF
 pages or PowerPoint slides as picture cards). Use the Card position control
-(Bottom / Left / Right) to place the in-video card; the choice persists
+(Bottom / Left / Right / Video + Card) to place the in-video card; the choice persists
 across restarts. **Paint color** drives Finger Paint: enable Paint Mode, then
 pinch thumb + index and drag to paint on the card (Undo/Redo/Clear included).
 On a picture card, spread or pinch thumb + index (with the thumb raised) to
@@ -133,7 +134,7 @@ Live by itself.
 ### Troubleshooting
 
 Always test with the newest staged build (window title; currently Build
-42) — earlier builds fail at different stages below.
+62) — earlier builds fail at different stages below.
 
 - **“Camera extension not found in this app bundle”**: a stale instance is
   still running (quit first — the single-instance guard keeps the old one),
@@ -171,6 +172,39 @@ Always test with the newest staged build (window title; currently Build
 - **Conflicts**: quit other virtual cameras (e.g. OBS Virtual Camera) if the
   feed stalls.
 
+## AI Visual Education Studio
+
+On branch `visual-pedagogy`, the Studio window turns difficult source texts
+(history, fractions, science, Bible passages) into illustrated lesson decks
+using the Meta Model API (`https://api.meta.ai/v1`): **Muse Spark**
+storyboard planning plus **Muse Image** illustrations, with deterministic
+local diagrams (fraction circles, number lines, timelines, cause→effect)
+for exact content. Generated decks save into the catalog and present
+inside the composited video like any other cards.
+
+Setup:
+
+1. Get a key at [dev.meta.ai](https://dev.meta.ai) and paste it into the
+   Studio's key field — it is stored in the Keychain, never in files.
+2. Import source (paste text, PDF, or PowerPoint), pick audience / level /
+   subject / style, and tick the per-lesson approval box: nothing is
+   transmitted until you approve each lesson.
+3. Generate, review each draft (retitle, relabel, edit prompts, refresh
+   text for free, regenerate only changed cards), then save to a collection.
+
+PDF and PowerPoint imports run in faithful mode: the model splits your
+pages/slides verbatim to fit video cards — no rewritten text, no new
+illustrations or diagrams, and no image API cost.
+
+Privacy: only your approved source text and illustration prompts leave the
+Mac, to the Meta Model API. Webcam frames are never transmitted. See the
+approval gate in `GestureCue/AI/StudioViewModel.swift`.
+
+Manual checklist (key round-trip, import, generate, review, save, present
+over Zoom): [docs/MANUAL-TEST-STUDIO.md](docs/MANUAL-TEST-STUDIO.md).
+The consolidated human gate (ST + VC steps with tick boxes) is
+[docs/USER-VERIFICATION-GATE.md](docs/USER-VERIFICATION-GATE.md).
+
 ## Architecture
 
 One shared capture pipeline feeds analysis, output, and recording:
@@ -203,12 +237,14 @@ no camera required.
 
 ## Testing
 
-169 XCTest unit tests in `GestureCueTests/` cover classification, confidence
+282 XCTest unit tests in `GestureCueTests/` cover classification, confidence
 thresholds, stabilization, hold-to-fire stillness, gesture→action mapping,
 card state transitions, paint, zoom, the command latch, compositing, the
-program pipeline, and MP4 recording (incl. a real H.264 encode of synthetic
-frames). Camera/Zoom behavior additionally needs the manual checklists in
-`docs/`.
+program pipeline, MP4 recording (incl. a real H.264 encode of synthetic
+frames), and the AI Studio (API client parsing, credential stores, source
+import, illustration composition, diagram validation, deck round-trip).
+Camera/Zoom/API behavior additionally needs the manual checklists in `docs/`
+plus live runs against the real Meta API.
 
 ## Limitations
 
@@ -221,7 +257,12 @@ frames). Camera/Zoom behavior additionally needs the manual checklists in
 - Zoom/Teams integration works two ways: the native virtual camera (see
   Virtual camera above, verified working on camera), or OBS capturing
   the output window (see above) as a fallback.
-- Sample cards are hand-written; no AI generation or speech recognition.
+- No speech recognition; no sign-language instruction generation.
+- Studio plans are strict-JSON-Schema-constrained plus decoder
+  validation, with one automatic retry on rate limits / transient
+  server errors.
+- No visual layout editor (resize/reposition) and no cross-deck card
+  move/duplicate yet.
 
 ## Roadmap
 
@@ -229,5 +270,7 @@ frames). Camera/Zoom behavior additionally needs the manual checklists in
    (CoreMediaIO camera extension behind the `VideoOutputService` seam,
    verified on camera in Zoom + QuickTime); remaining: VC-01..07
    checklist. Continued work happens on branch `virtual-camera`.
-2. **AI-assisted cards:** short accessible message generation, kept out by
-   design until a milestone spec covers the service and privacy story.
+2. **AI Visual Education Studio:** implemented on branch
+   `visual-pedagogy` (Meta Muse Spark + Muse Image, local diagrams,
+   catalog round-trip, Build 62); remaining: user manual verification
+   (ST-01..12) and merge decision.

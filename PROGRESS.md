@@ -719,6 +719,363 @@ conflicts; docs synced on top (AGENTS/README now describe main as
 including the camera). Tag `main-build-45` marks the merge line.
 Branch `virtual-camera` kept alive and synced for continued work.
 
+## 2026-10-29 — Branch visual-pedagogy, slice 1: AI foundation (uncommitted)
+
+New branch from main tip (84bc40a) for the Visual Pedagogical Generator
+spec. Verified: Meta Model API exists and is OpenAI-compatible
+(api.meta.ai/v1, muse-spark-1.3 + muse-image-1.0); app unsandboxed (no
+network entitlement needed); no prior AI code to reuse. Built:
+settings/plan/diagram models, Spark-plan + Image-generate client with
+mockable transport, Keychain/in-memory credential stores, 10 new tests
+(request shapes, fenced-JSON decode, error mapping, no-network-without-
+key, settings roundtrip). 209/209 green, pbxproj registered. Live API verified with user's key
+(META_API_KEY in untracked .env — value never logged): chat completions
+return the OpenAI envelope our parser expects; Spark reasons ~150+
+tokens before emitting, so plan calls must not set small max_tokens
+(client omits it) and the UI must show progress; images return
+b64_json WEBP (1600px despite 1024 request — sizes not asserted),
+decodable by macOS ImageIO as-is. Next: Studio UI + review/edit +
+catalog save, then diagram renderer, then MVP A/B with real calls.
+
+## 2026-10-29 — visual-pedagogy slices 2+3: Studio + diagrams (Build 47)
+
+Slice 2 (Studio, uncommitted): SourceImporter (paste/PDF/MD/TXT/ipynb
+as data + existing decks, 20k cap flagged), DraftCard editing model +
+catalog conversion, IllustrationComposer (title band + label line onto
+artwork, 16:9 PNG), LessonGenerator actor (plan → diagram-first artwork
+→ drafts, progress + cancel), StudioViewModel (settings persisted, Keychain
+key, per-source approval gate, regenerate/remove, catalog save with
+collection), StudioView 6-section window + toolbar entry, Presentation.
+collection (+ library subtitle + editor). Slice 3: DiagramRenderer
+(fractionCircle/numberLine/timeline/causeEffect at 1280x720, validated,
+unknown/invalid → illustration fallback). Tests: 231/231 green (22 new:
+importer incl. nbformat variants, composer size, 4 renderers + rejects,
+draft conversion, collection Codable compat, generator orchestration +
+diagram preference). Live: Spark emits conforming plans but invents
+diagram kinds unprompted → prompt now constrains the kind catalog
+(re-validated live, all fractionCircle). Approval prompts got disabled
+mid-session: suite runs sandboxed fine (earlier power-assertion note
+appears stale). Staged Build 47 (46 superseded pre-delivery), deep OK.
+
+## 2026-10-29 — Slice 4: MVP manual checklist (needs user)
+
+App-side automation is done; these need the user's key + eyes in the
+Build 47 Studio (paste key once — Keychain; approve each source):
+- MVP-A (history): import a factual historical text YOU trust; settings
+  History/timeline, 5 cards. Accept: plan keeps facts/dates, no invented
+  quotes; timeline card renders the deterministic diagram; other cards
+  illustrated; edit a label + regenerate one image; save to History
+  collection; present over virtual camera; MP4 records it.
+- MVP-B (fractions 1/2+1/4): 3 cards, Mathematics/mathSteps. Accept:
+  fractionCircle diagrams exact (shading matches numbers); arithmetic in
+  bodies correct; present + highlight with brush while presenting.
+- Privacy: confirm no network before approval (Generate disabled until
+  ticked); key survives relaunch; clearing key disables Generate.
+Record outcome here; then commit + push + tag (ask).
+
+## 2026-10-29 — Build 48 FIX: Studio drafts wiped on main-window changes
+
+User report: generated illustrations disappeared when switching. Cause:
+StudioViewModel was constructed inside the Scene body, so every
+AppViewModel publish (card switch, camera status…) rebuilt it fresh and
+wiped drafts. Fix: own both view models once as App-level @StateObjects
+(drafts now also survive Studio window close/reopen; still in-memory
+until Save to Catalog — approved lessons persist in catalog JSON).
+231/231 green, staged, deep OK. User re-verifies MVP run on Build 48.
+
+## 2026-10-29 — Build 49: card fit for lessons + Bible subject (user request)
+
+User report: generated texts/pictures cropped or cut on video. Two real
+renderer causes: (1) message overflow silently clipped mid-sentence;
+(2) bottom banners starved pictures (vertical split in a short banner).
+Fixes: bottom cards with artwork now split side-by-side (text left,
+picture right; unchanged without artwork); message type shrinks to fit
+(cached per overlay, readable floor) instead of clipping; layout + fit
+extracted as pure tested functions. Prompts: bodies ≤220 chars, titles
+≤40, labels ≤4×3 words, split-overlong-concepts rule, standalone
+bodies, crop-safe single-scene illustrations. Also: new Bible/Religious
+subject (verse word-for-word rule, reverent reconstructions), concept
+preserved in card detail (nothing dropped), "Bible" collection preset.
+236/236 green (5 new), staged, deep OK. User re-verifies MVP incl. a
+Bible passage run.
+
+## 2026-10-29 — Build 50: deck round-trip + selective regenerate (user request)
+
+Re-import any catalog deck into the Studio ("Edit Existing Deck…") for
+adjustment: artwork + prompts travel along, detail parses back
+best-effort. Cards store the used prompt + raw base image (new optional
+fields, old files decode). Illustration prompt editable per draft with
+an "edited" marker; "Regenerate Changed (n)" refreshes ONLY edited
+prompts (untouched cards keep pixels, no cost); per-card Regenerate
+kept; "Refresh Text" re-composes base art with edited title/labels for
+free (no API call); regenerate also refreshes the stored base so later
+text refreshes don't revert. 240/240 green (4 new round-trip tests),
+staged, deep OK. User verifies: re-import a lesson, tweak one
+prompt + one title, regen-changed updates only that card, refresh fixes
+the band, save persists.
+
+## 2026-10-30 — Build 51: hackathon readiness verification + 2 fixes
+
+Ran the Build 49 verification plan on branch visual-pedagogy. Live E2E
+(temp XCTest probe, real Meta API, removed after): history lesson 5/5
+(4 generated illustrations + timeline; dates/facts faithful, chronology
+correct) and fractions lesson 5/5 (all diagrams; 2/4 = 1/2 and
+1/2 + 1/4 = 3/4 exact) through the real generator → composer → card →
+compositor chain; composited 720p frames reviewed (readable, unclipped,
+30% banner clears signing area) + 320px small-tile sim (titles hold,
+body needs Expand at tiny sizes). Fixes: (1) composer title band
+covered diagram edge labels — diagrams ship raw, new optional
+`diagramKind` card field preserves the skip across save/reopen (old
+files decode); (2) in-flight cancel wrapped as network error —
+CancellationError passes through. Reliability audit: approval gate,
+Keychain, no camera frames in requests, no secrets in tree/history,
+diagram validation, graceful image-decode fallback all verified; known
+limits: JSON mode (not strict schema), no auto-retry. 244/244 green
+(4 new tests), staged, deep-codesign OK. Docs: README Studio section,
+new docs/MANUAL-TEST-STUDIO.md (ST-01..12), EXTERNAL-REVIEW → Build 51.
+Work UNCOMMITTED. User gate: ST-01..12 + VC-01..07 on Build 51, then
+commit + push + tag (ask), then merge decision.
+
+## 2026-10-30 — Build 52: approval resets on source edit (ST-02 check)
+
+User ran ST-01 (Key saved appears) and ST-02 (import-path reset works);
+code check found an edge: editing source text after ticking approval
+kept the tick, so Generate could send unapproved text. Fix: didSet on
+sourceTitle/sourceText clears approvalGiven (adopt() unaffected —
+same end state). ST-02 extended (edit-after-tick). 244/244, staged.
+
+## 2026-10-30 — Build 53: card titles wrap (user request)
+
+Long titles truncated with "…" on narrow left/right panels (single
+CTLine). Fix: wrappedTitleLines() breaks titles to fit (max 3 lines,
+"…" past that); draw path stacks lines and starts the message below
+the block. 247/247 (3 new tests), staged, deep-codesign OK. Test note:
+single-arg brightPixelCount scans the bottom strip only — side-panel
+render test uses the full-height xFraction overload.
+
+## 2026-10-30 — Build 54: Studio fixes from fix-issues.md (user request)
+
+1) Studio opens a new window every click → scene is now a single
+Window (was WindowGroup): repeat opens focus the existing instance.
+2) No way to start new material → "New" button in the source section
+with dirty tracking (source/draft/title didSets; cleared by save,
+deck load, New): unsaved work raises Save / Discard / Cancel, with
+Save offered only when title + drafts exist (shared canSave gate);
+saveToCatalog returns success; generate() re-checks cancellation
+before assigning drafts so New mid-run can't resurrect stale drafts.
+3) Studio deck menus offered hand-made decks → both menus list AI
+Studio decks only (isStudioDeck provenance: any illustration prompt;
+importers/samples never set it), with an empty-state placeholder.
+Also cleared 2 dead-`try` warnings in GenerationTests. 248/248 green
+(1 new test), staged, deep-codesign OK. Pre-existing warnings remain
+in PresentationCardPanelView/VideoRecorder (untouched branch files).
+Split-view layout parked in docs/PENDING-FEATURES.md (awaiting
+approval). User verifies the 3 fixes + restarts gate on Build 54.
+
+## 2026-10-30 — Build 55: imports clear stale drafts (fix-issues.md #4)
+
+New source no longer leaves old Review Drafts behind: adopt() clears
+drafts/title/progress/status and cancels a running generation (so stale
+drafts can't resurrect on completion); imports over unsaved drafts
+(file, pasted text, deck-as-source) stash the source and raise Save /
+Discard / Cancel first, reusing the canSave gate. 248/248 green (no
+new unit tests — StudioViewModel needs the heavy AppViewModel; covered
+by manual verify), staged, deep-codesign OK. User verifies per
+fix-issues.md, then runs gate on Build 55.
+
+## 2026-10-30 — Build 56: main-window close shuts everything (fix-issues.md #5)
+
+Closing the main window dismissed nothing: Studio + Output stayed open
+(and capture kept running invisibly). Now onDisappear dismisses the
+Studio window and mainWindowClosed() stops recording, output, camera,
+and the virtual stream — all idempotent, safe on quit too. App stays
+running so Studio drafts survive in memory; Dock-click reopens.
+248/248 green (no new unit tests — window lifecycle is manual-only),
+staged, deep-codesign OK. User verifies per fix-issues.md, gate on 56.
+
+## 2026-10-30 — Build 57: faithful presentation splits + PowerPoint import (user request)
+
+PDF/PowerPoint imports now split faithfully instead of inventing new
+lessons: new Fidelity (.creative/.faithful) derived from source kind;
+faithful system prompt (verbatim split, order-preserving, empty
+illustrationPrompt, null diagram, temperature 0.1); generator skips
+the image API for prompt-less cards (text-only, no cost); Studio
+shows a faithful-mode caption. New PptxTextExtractor (dependency-free
+zip + slide XML, stored/deflated; learned Apple's one-shot
+COMPRESSION_ZLIB decodes raw deflate); panel + importer accept
+.pptx/.ppsx (.ppt guides to convert). Live-verified the exact
+faithful prompt: 3/3 cards verbatim, empty prompts, null diagrams.
+256/256 green (8 new tests incl. embedded-pptx + in-test PDF),
+staged, deep-codesign OK. User verifies PP import + faithful run.
+Follow-up: EXTERNAL-REVIEW.md fully refreshed to Build 57 (arch,
+features, verification, caveats, judging ask) for external model
+review.
+
+## 2026-10-30 — Build 58: next_step_1 release gate (Tasks 1–5)
+
+T3 import security: PPTX reader hardened (entry/slide/total/entry-byte
+caps, DOCTYPE rejection, explicit external-entity off) + 9 regression
+tests (in-test zip builder). T2 API reliability: strict JSON Schema
+plans ADOPTED (enum/range/count enforcement proven live first),
+explicit timeouts (240/180 s), one retry on 429/502-504 with real
+status on exhaustion, per-status messages; 7 new tests. T1 modes:
+explicit Visual Educational / Faithful Presentation picker (any
+source; kind-based default) + measured per-card fidelity verdicts in
+review (sentence containment, advisory); 1 new test. T5: 3
+concurrency warnings fixed (no real races: @MainActor view + inline
+bindings; FinishingWriter handoff wrapper) — tree now warning-free;
+secrets audit clean; new HACKATHON.md, RELEASE-CHECKLIST.md, gate
+Part 3 (flows H/F/P). new-features.md items parked (out of scope per
+spec). 273/273 green, staged, deep-codesign OK. User runs gate + demo
+flows on Build 58.
+
+## 2026-10-30 — Build 59: "Diverse" collection (user request)
+
+One-line: Studio collection menu gains "Diverse" for ungroupable
+lessons. 273/273, staged, deep-codesign OK.
+
+## 2026-10-30 — Build 60: card number badge (new-features.md #2)
+
+Every shown card burns an "N/M" badge top-right inside the banner
+(all positions + expanded) so the presenter sees where they are.
+Plumbing: ProgramOverlay carries cardNumber/cardCount from the store
+via syncOverlay; draw reserves badge width from the title so long
+titles never run under it. 275/275 (2 new tests), staged,
+deep-codesign OK. Straight-line brush (new-features #1) still open.
+
+## 2026-10-30 — Build 61: model-suggested collections (user request)
+
+Save section gains Suggest: asks Muse Spark to categorise the source
+excerpt (strict {"collection"} schema, temp 0.1); existing buckets
+match case-insensitively, genuinely new names are created and
+persisted (UserDefaults) into the Collections menu. Same approval
+gate as generation (excerpt is transmitted). Shared chat-call helper
+extracted in the client. Live-verified: "Science" matched, "Crafts"
+proposed. 278/278 (3 new tests), staged, deep-codesign OK.
+
+## 2026-10-30 — Build 62: Video + Card side-by-side layout (user request)
+
+New Card position option: the whole camera frame aspect-fit into a
+left tile beside the card panel (right 40%) — nothing is ever
+covered. Black stage, mirror-aware fit, paint clips to the panel as
+before, hidden/expanded behave as fullscreen. 282/282 (4 new tests:
+tile geometry, whole-video visibility, mirror, hidden passthrough),
+staged, deep-codesign OK.
+
+## 2026-10-30 — Build 63: PowerPoint original images reattached (user report)
+
+Importing a picture deck dropped the pictures (text-only extraction).
+Now: PptxTextExtractor resolves slide rels → ppt/media (shared
+dedup, embed order, same 100 MB budget, ImageIO decodability gate,
+foreign/escaping targets rejected), SourceImporter tags the source
+with [Image N] markers, the strict plan schema + faithful/creative
+prompts assign imageRefs, and LessonGenerator reattaches each card's
+original art composed with its own title/labels (no image API call;
+dangling refs → text-only). 297/297 (15 new tests), staged,
+deep-codesign OK. Live probe: strict schema accepted, model assigned
+[1]→card 1, [2]→card 2 verbatim, no dangling refs. User gate pending:
+reinstall → import a picture deck → verify originals on cards on
+video → ST/VC + H/F/P → commit+push+tag on go.
+
+## 2026-10-30 — Build 64: PDF original images (user report)
+
+Same gap as Build 63 but for PDF: text-only import. New
+PdfImageExtractor (registered in .xcodeproj) walks page image
+XObjects via CGPDF: JPEG-family streams ship verbatim (ImageIO
+gate); Quartz auto-decodes all lossless filters to samples, which
+are size-validated, bit-unpacked, palette-expanded, and PNG-encoded
+(RGB/gray/CMYK→RGB/indexed/ICC; Lab+16-bit skipped). Form-nested
+images, inherited Resources, per-page [Image N] markers, image-only
+pages survive. Key learning: CGPDFStreamCopyData ignores `.raw`
+for filtered streams (decodes anyway, still reports `.raw`) —
+only the format flag on DCT/JPX is honest. 313/313 (16 new tests:
+hand-crafted xref-exact PDF fixtures with pixel-exact asserts),
+staged, deep-codesign OK. Same user gate: reinstall → picture PDF
+→ originals on cards on video → ST/VC + H/F/P → commit+push+tag.
+
+## 2026-10-30 — Build 65: optional AI Instructions (next_step_2.md)
+
+One focused change: a multiline "AI Instructions (Optional)" field
+below Source Material. Blank = byte-identical default prompt;
+provided = a labelled guidance block in the system message (source
+stays the user message) plus subordination rules: guidance steers
+emphasis/style/subjects but never moves accuracy, card count,
+language, or the JSON shape — and in faithful mode never rewrites
+the author's words. Instructions are sticky like settings (edits
+reset approval, never touch drafts/art), saved on the deck
+(`Presentation.aiInstructions`, legacy files decode), and restored
+by Edit Deck. 319/319 (6 new tests: prompt parity + rule pins,
+separation/subordination post, faithful lock, generator
+passthrough, round-trip + legacy decode), staged, deep-codesign OK.
+Live probe (real client, plan only): Sputnik acceptance → 4 cards,
+all dates exact, timeline on every card. User gate: reinstall →
+Sputnik acceptance with + without instructions → ST/VC + H/F/P →
+commit+push+tag on go.
+
+## 2026-10-30 — Build 66: save confirmation + auto-close (user request)
+
+"Save Approved Lesson" now flashes green "Saved ✓" for ~1 s and
+closes the Studio window (view-level only: the New/import alert
+Save paths still keep the workspace open). Flash resets when drafts
+or title change. 319/319 (view-only, no new tests), staged,
+deep-codesign OK. Manual verify: save a lesson → green flash →
+window closes → deck in catalog.
+
+## 2026-10-30 — Build 67: adult prose for adult audiences (user report)
+
+Generated texts for Deaf adults read childish ("The Soviet Union, a
+country", "X means Y") — the default Beginner level said "define
+every term". Now: beginner assumes everyday general knowledge and
+never defines common terms; Deaf-adult guidance demands respectful,
+non-condescending adult language; creative mode adds an adult-prose
+rule for adult audiences (no defining common knowledge, no "means"
+simplifications — the presenter explains live when needed).
+Children audiences unchanged. 321/321 (2 new tests), staged,
+deep-codesign OK. Live probe (Deaf adults + Sputnik source): adult
+tone, no common-term definitions. User gate: reinstall → generate
+for Deaf adults → tone check → ST/VC + H/F/P → commit+push+tag.
+
+## 2026-10-30 — Build 68: video tile left/right/bottom (user request)
+
+Video + Card mode gains a "Video tile" picker (Left/Right/Bottom,
+persisted, default Left = current layout): right mirrors the tiles,
+bottom puts a full-width video strip below a top card panel (which
+side-splits text/picture like bottom banners). Paint clip, badge,
+and fullscreen hidden/expanded follow automatically. 326/326 (5 new
+tests: right/bottom geometry, top-panel split, right/bottom pixel
+composites), staged, deep-codesign OK. Manual verify: Video + Card
+→ switch tiles → whole video visible in each → ST/VC + H/F/P.
+
+## 2026-10-30 — Build 69: fewer-cards confirmation (user request)
+
+Generate now counts "## Slide/Page N" segments in the source: when
+they outnumber the Cards setting, an alert asks "Generate fewer
+cards than slides?" (Generate/Cancel) instead of silently merging.
+Exact-marker match only, so pasted prose never trips it. 329/329
+(3 new counter tests; alert flow is manual), staged, deep-codesign
+OK. Manual verify: import 12-slide deck with Cards 5 → alert shows
+12 vs 5 → Generate proceeds, Cancel stays.
+
+## 2026-10-30 — Build 70: card-centric panel picker (user report)
+
+Build 68's "Video tile: Bottom" put the video strip below the card;
+expected is video up, card below. Reframed the choice as card
+placement like the main picker: "Card panel" Left/Right/Bottom
+(video takes the opposite side/top). Default Right = previous
+visual default; fresh prefs key so no stale Build 68 value flips
+sides. 329/329 (5 tile tests reworked to the new mapping), staged,
+deep-codesign OK. Manual verify: Video + Card → Bottom → big video
+up top, card below → ST/VC + H/F/P.
+
+## 2026-10-30 — Build 71: per-card regen spinner (user request)
+
+"Regenerate Image" ran silently. Now the card shows a spinner +
+"Regenerating…" and disables its button until the artwork lands
+(batch regen lights each card in turn; all regen buttons disable
+while any regen or generation runs). 329/329 (VM/view-only, no new
+tests), staged, deep-codesign OK. Manual verify: regenerate one
+card → spinner → new art; batch → spinners follow each card.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

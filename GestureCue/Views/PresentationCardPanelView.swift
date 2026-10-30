@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Large readable presentation card with equivalent mouse and keyboard controls
 /// (Show ↑, Hide Esc, Next →, Expand E) for every gesture action.
+@MainActor
 struct PresentationCardPanelView: View {
     @ObservedObject var viewModel: AppViewModel
 
@@ -203,7 +204,7 @@ struct PresentationLibrarySheet: View {
             List(viewModel.library.presentations, selection: deckSelection) { deck in
                 VStack(alignment: .leading) {
                     Text(deck.name)
-                    Text("\(deck.cards.count) cards")
+                    Text(collectionLine(for: deck))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -240,6 +241,14 @@ struct PresentationLibrarySheet: View {
         )
     }
 
+    private func collectionLine(for deck: Presentation) -> String {
+        if let collection = deck.collection, !collection.isEmpty {
+            "\(deck.cards.count) cards · \(collection)"
+        } else {
+            "\(deck.cards.count) cards"
+        }
+    }
+
     private var cardDetail: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let deck = viewModel.library.selected {
@@ -248,6 +257,9 @@ struct PresentationLibrarySheet: View {
                         .font(.headline)
                     Button("Done") { dismiss() }
                 }
+                TextField("Collection (optional)", text: deckCollection(deck))
+                    .font(.callout)
+                    .foregroundColor(.secondary)
                 HStack {
                     Text("Cards")
                         .font(.headline)
@@ -288,6 +300,13 @@ struct PresentationLibrarySheet: View {
         )
     }
 
+    private func deckCollection(_ deck: Presentation) -> Binding<String> {
+        Binding(
+            get: { deck.collection ?? "" },
+            set: { viewModel.setPresentationCollection(deck.id, collection: $0) }
+        )
+    }
+
     @ViewBuilder
     private var cardEditor: some View {
         if let selectedCardID,
@@ -298,15 +317,15 @@ struct PresentationLibrarySheet: View {
                 Text("Edit Card")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
-                TextField("Title", text: cardField(
+                TextField("Title", text: Binding(
                     get: { card.title },
                     set: { viewModel.updateActiveCard(at: index, title: $0, message: card.message, detail: card.detail) }
                 ))
-                TextField("Message", text: cardField(
+                TextField("Message", text: Binding(
                     get: { card.message },
                     set: { viewModel.updateActiveCard(at: index, title: card.title, message: $0, detail: card.detail) }
                 ))
-                TextField("Detail (optional)", text: cardField(
+                TextField("Detail (optional)", text: Binding(
                     get: { card.detail ?? "" },
                     set: {
                         viewModel.updateActiveCard(
@@ -333,7 +352,4 @@ struct PresentationLibrarySheet: View {
         }
     }
 
-    private func cardField(get: @escaping () -> String, set: @escaping (String) -> Void) -> Binding<String> {
-        Binding(get: get, set: set)
-    }
 }

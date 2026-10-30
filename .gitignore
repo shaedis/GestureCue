@@ -13,3 +13,4 @@ old-ignore/
 # Scratch and tool artifacts.
 generated_images/
 *.profraw
+.env

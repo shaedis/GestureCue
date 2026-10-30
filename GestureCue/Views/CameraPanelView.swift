@@ -117,6 +117,14 @@ struct CameraPanelView: View {
                 }
             }
             .pickerStyle(.segmented)
+            if viewModel.cardPosition == .sideBySide {
+                Picker("Card panel", selection: $viewModel.cardPanelPosition) {
+                    ForEach(CardPanelPosition.allCases, id: \.self) { panel in
+                        Text(panel.displayName).tag(panel)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
             Picker("Paint color", selection: $viewModel.paintColor) {
                 ForEach(HighlightColor.allCases, id: \.self) { color in
                     Text(color.displayName).tag(color)

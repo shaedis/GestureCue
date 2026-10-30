@@ -41,6 +41,19 @@
 		100000000000000000000233 /* PresentationCardStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000133 /* PresentationCardStoreTests.swift */; };
 		100000000000000000000234 /* VideoPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000134 /* VideoPipelineTests.swift */; };
 		100000000000000000000236 /* FingerPaintControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000135 /* FingerPaintControllerTests.swift */; };
+		100000000000000000000285 /* GenerationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000280 /* GenerationModels.swift */; };
+		100000000000000000000286 /* MetaModelClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000281 /* MetaModelClient.swift */; };
+		100000000000000000000287 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000282 /* CredentialStore.swift */; };
+		100000000000000000000288 /* GenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000283 /* GenerationTests.swift */; };
+		100000000000000000000297 /* SourceImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000290 /* SourceImporter.swift */; };
+		10000000000000000000028A /* PptxTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000289 /* PptxTextExtractor.swift */; };
+		100000000000000000000298 /* LessonDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000291 /* LessonDraft.swift */; };
+		100000000000000000000299 /* IllustrationComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000292 /* IllustrationComposer.swift */; };
+		10000000000000000000029A /* DiagramRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000293 /* DiagramRenderer.swift */; };
+		10000000000000000000029B /* LessonGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000294 /* LessonGenerator.swift */; };
+		10000000000000000000029C /* StudioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000295 /* StudioViewModel.swift */; };
+		10000000000000000000029D /* StudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000296 /* StudioView.swift */; };
+		1000000000000000000002A1 /* PdfImageExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000002A0 /* PdfImageExtractor.swift */; };
 		100000000000000000000237 /* HandGestureDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000136 /* HandGestureDetectorTests.swift */; };
 		100000000000000000000235 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 100000000000000000000022 /* XCTest.framework */; };
 		100000000000000000000240 /* sample-art-watch.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000140 /* sample-art-watch.jpg */; };
@@ -111,6 +124,19 @@
 		100000000000000000000134 /* VideoPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPipelineTests.swift; sourceTree = "<group>"; };
 		100000000000000000000135 /* FingerPaintControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerPaintControllerTests.swift; sourceTree = "<group>"; };
 		100000000000000000000136 /* HandGestureDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetectorTests.swift; sourceTree = "<group>"; };
+		100000000000000000000280 /* GenerationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationModels.swift; sourceTree = "<group>"; };
+		100000000000000000000281 /* MetaModelClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaModelClient.swift; sourceTree = "<group>"; };
+		100000000000000000000282 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
+		100000000000000000000283 /* GenerationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationTests.swift; sourceTree = "<group>"; };
+		100000000000000000000290 /* SourceImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceImporter.swift; sourceTree = "<group>"; };
+		100000000000000000000289 /* PptxTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PptxTextExtractor.swift; sourceTree = "<group>"; };
+		100000000000000000000291 /* LessonDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonDraft.swift; sourceTree = "<group>"; };
+		100000000000000000000292 /* IllustrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IllustrationComposer.swift; sourceTree = "<group>"; };
+		100000000000000000000293 /* DiagramRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagramRenderer.swift; sourceTree = "<group>"; };
+		100000000000000000000294 /* LessonGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonGenerator.swift; sourceTree = "<group>"; };
+		100000000000000000000295 /* StudioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioViewModel.swift; sourceTree = "<group>"; };
+		100000000000000000000296 /* StudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioView.swift; sourceTree = "<group>"; };
+		1000000000000000000002A0 /* PdfImageExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfImageExtractor.swift; sourceTree = "<group>"; };
 		100000000000000000000140 /* sample-art-watch.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-watch.jpg; sourceTree = "<group>"; };
 		100000000000000000000141 /* sample-art-captions.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-captions.jpg; sourceTree = "<group>"; };
 		100000000000000000000142 /* sample-art-questions.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample-art-questions.jpg; sourceTree = "<group>"; };
@@ -183,6 +209,7 @@
 				10000000000000000000000D /* Output */,
 				10000000000000000000000C /* Views */,
 				10000000000000000000002B /* Resources */,
+				100000000000000000000284 /* AI */,
 				100000000000000000000257 /* GestureCue.entitlements */,
 			);
 			path = GestureCue;
@@ -260,6 +287,7 @@
 				100000000000000000000114 /* LandmarkOverlayView.swift */,
 				100000000000000000000115 /* ProgramOutputView.swift */,
 				10000000000000000000011A /* OutputWindowController.swift */,
+				100000000000000000000296 /* StudioView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -289,6 +317,24 @@
 			path = Output;
 			sourceTree = "<group>";
 		};
+		100000000000000000000284 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000280 /* GenerationModels.swift */,
+				100000000000000000000281 /* MetaModelClient.swift */,
+				100000000000000000000282 /* CredentialStore.swift */,
+				100000000000000000000290 /* SourceImporter.swift */,
+				100000000000000000000291 /* LessonDraft.swift */,
+				100000000000000000000289 /* PptxTextExtractor.swift */,
+				100000000000000000000292 /* IllustrationComposer.swift */,
+				100000000000000000000293 /* DiagramRenderer.swift */,
+				100000000000000000000294 /* LessonGenerator.swift */,
+				100000000000000000000295 /* StudioViewModel.swift */,
+				1000000000000000000002A0 /* PdfImageExtractor.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
 		10000000000000000000000E /* GestureCueTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -300,6 +346,8 @@
 				100000000000000000000135 /* FingerPaintControllerTests.swift */,
 				100000000000000000000136 /* HandGestureDetectorTests.swift */,
 				100000000000000000000137 /* PresentationLibraryTests.swift */,
+				100000000000000000000283 /* GenerationTests.swift */,
+
 			);
 			path = GestureCueTests;
 			sourceTree = "<group>";
@@ -461,6 +509,18 @@
 				100000000000000000000208 /* GestureActionRouter.swift in Sources */,
 				100000000000000000000209 /* HandGestureDetector.swift in Sources */,
 				10000000000000000000021B /* FingerPaintController.swift in Sources */,
+				100000000000000000000285 /* GenerationModels.swift in Sources */,
+				100000000000000000000286 /* MetaModelClient.swift in Sources */,
+				100000000000000000000287 /* CredentialStore.swift in Sources */,
+				100000000000000000000297 /* SourceImporter.swift in Sources */,
+				100000000000000000000298 /* LessonDraft.swift in Sources */,
+			10000000000000000000028A /* PptxTextExtractor.swift in Sources */,
+				100000000000000000000299 /* IllustrationComposer.swift in Sources */,
+				10000000000000000000029A /* DiagramRenderer.swift in Sources */,
+				10000000000000000000029B /* LessonGenerator.swift in Sources */,
+				10000000000000000000029C /* StudioViewModel.swift in Sources */,
+				10000000000000000000029D /* StudioView.swift in Sources */,
+				1000000000000000000002A1 /* PdfImageExtractor.swift in Sources */,
 				10000000000000000000020A /* VideoCaptureService.swift in Sources */,
 				10000000000000000000020B /* AVFoundationVideoCaptureService.swift in Sources */,
 				10000000000000000000020C /* CameraManager.swift in Sources */,
@@ -501,6 +561,8 @@
 				100000000000000000000236 /* FingerPaintControllerTests.swift in Sources */,
 				100000000000000000000237 /* HandGestureDetectorTests.swift in Sources */,
 				100000000000000000000238 /* PresentationLibraryTests.swift in Sources */,
+				100000000000000000000288 /* GenerationTests.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
