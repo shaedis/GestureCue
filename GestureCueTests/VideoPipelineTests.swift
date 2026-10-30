@@ -604,6 +604,276 @@ final class VideoPipelineTests: XCTestCase {
         }
     }
 
+    /// Busy photo-like image: deterministic high-frequency noise, a
+    /// stand-in for real illustrations over which paint must stay legible.
+    /// Mid-tone (100-220, mean ~160) so the red brush (luminance ~128)
+    /// deterministically earns a WHITE halo (line darker than bg).
+    private func makeBusyImageData() -> Data? {
+        let width = 96, height = 64
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: bitmapInfo) else { return nil }
+        // Deterministic LCG noise so dumps and tests are reproducible.
+        var state: UInt64 = 0x1234_5678_9ABC_DEF1
+        func nextByte() -> CGFloat {
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            return CGFloat(100 + Int((state >> 33) % 121)) / 255
+        }
+        for y in 0 ..< height {
+            for x in 0 ..< width {
+                let v = nextByte()
+                ctx.setFillColor(CGColor(red: v, green: nextByte(), blue: nextByte(), alpha: 1))
+                ctx.fill(CGRect(x: x, y: y, width: 1, height: 1))
+            }
+        }
+        guard let image = ctx.makeImage() else { return nil }
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, nil)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        return data as Data
+    }
+
+    /// Flat white image: the worst case for the yellow brush (line
+    /// luminance ~209 vs white 255), standing in for white diagram cards.
+    private func makeWhiteImageData() -> Data? {
+        let width = 96, height = 64
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: bitmapInfo) else { return nil }
+        ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        guard let image = ctx.makeImage() else { return nil }
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, nil)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        return data as Data
+    }
+
+    /// Mean red-channel value over a memory-row span and x-fraction span.
+    private func meanRed(_ buffer: CVPixelBuffer, rows: Range<Int>, xFraction: Range<Double>) -> Double {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return -1 }
+        let width = CVPixelBufferGetWidth(buffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let x0 = Int(Double(width) * xFraction.lowerBound)
+        let x1 = Int(Double(width) * xFraction.upperBound)
+        var sum = 0, n = 0
+        for y in rows {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: x0, to: x1, by: 2) {
+                sum += Int(row[x * 4 + 2]); n += 1
+            }
+        }
+        return Double(sum) / Double(max(n, 1))
+    }
+
+    /// Mean luminance difference (baseline minus painted) over a
+    /// memory-row span and x-fraction span. Positive = paint darkened it.
+    private func meanLuminanceDrop(painted: CVPixelBuffer, baseline: CVPixelBuffer, rows: Range<Int>, xFraction: Range<Double>) -> Double {
+        CVPixelBufferLockBaseAddress(painted, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(painted, .readOnly) }
+        CVPixelBufferLockBaseAddress(baseline, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(baseline, .readOnly) }
+        guard let pb = CVPixelBufferGetBaseAddress(painted), let bb = CVPixelBufferGetBaseAddress(baseline) else { return 0 }
+        let width = CVPixelBufferGetWidth(painted)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(painted)
+        let x0 = Int(Double(width) * xFraction.lowerBound)
+        let x1 = Int(Double(width) * xFraction.upperBound)
+        func lum(_ row: UnsafeMutablePointer<UInt8>, _ x: Int) -> Double {
+            0.299 * Double(row[x * 4 + 2]) + 0.587 * Double(row[x * 4 + 1]) + 0.114 * Double(row[x * 4])
+        }
+        var sum = 0.0, n = 0
+        for y in rows {
+            let pr = pb.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            let br = bb.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: x0, to: x1, by: 2) {
+                sum += lum(br, x) - lum(pr, x); n += 1
+            }
+        }
+        return sum / Double(max(n, 1))
+    }
+
+    /// Red-channel standard deviation: proves the photo actually renders
+    /// (flat card background would read near zero), so the halo tests
+    /// below cannot pass vacuously on a missing picture.
+    private func redStdev(_ buffer: CVPixelBuffer, rows: Range<Int>, xFraction: Range<Double>) -> Double {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return -1 }
+        let width = CVPixelBufferGetWidth(buffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let x0 = Int(Double(width) * xFraction.lowerBound)
+        let x1 = Int(Double(width) * xFraction.upperBound)
+        var values: [Double] = []
+        for y in stride(from: rows.lowerBound, to: rows.upperBound, by: 3) {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: x0, to: x1, by: 5) {
+                values.append(Double(row[x * 4 + 2]))
+            }
+        }
+        guard !values.isEmpty else { return -1 }
+        let mean = values.reduce(0, +) / Double(values.count)
+        return (values.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)).squareRoot()
+    }
+
+    /// Mean blue-channel value over a memory-row span and x-fraction span.
+    private func meanBlue(_ buffer: CVPixelBuffer, rows: Range<Int>, xFraction: Range<Double>) -> Double {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return -1 }
+        let width = CVPixelBufferGetWidth(buffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let x0 = Int(Double(width) * xFraction.lowerBound)
+        let x1 = Int(Double(width) * xFraction.upperBound)
+        var sum = 0, n = 0
+        for y in rows {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: x0, to: x1, by: 2) {
+                sum += Int(row[x * 4]); n += 1
+            }
+        }
+        return Double(sum) / Double(max(n, 1))
+    }
+
+    /// Mean red-excess (r minus mean(g, b)) over a span: the chroma
+    /// signal of the red brush, which reads even on white (where raw
+    /// red gain is zero).
+    private func meanRedExcess(_ buffer: CVPixelBuffer, rows: Range<Int>, xFraction: Range<Double>) -> Double {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return 0 }
+        let width = CVPixelBufferGetWidth(buffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let x0 = Int(Double(width) * xFraction.lowerBound)
+        let x1 = Int(Double(width) * xFraction.upperBound)
+        var sum = 0.0, n = 0
+        for y in rows {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: x0, to: x1, by: 2) {
+                sum += Double(row[x * 4 + 2]) - (Double(row[x * 4 + 1]) + Double(row[x * 4])) / 2
+                n += 1
+            }
+        }
+        return sum / Double(max(n, 1))
+    }
+
+    /// Renders the 720p bottom card (message + image, side-by-side) with
+    /// and without one horizontal brush stroke at normalized y 0.2.
+    private func renderBrushOverCard(imageData: Data?, color: HighlightColor, endedAt: Date?, xSpan: Range<Double> = 0.1 ..< 0.9) throws -> (painted: CVPixelBuffer, baseline: CVPixelBuffer) {
+        let card = PresentationCard(title: "Title here", message: "Some message text here", imageData: imageData)
+        func render(layer: PaintLayer) throws -> CVPixelBuffer {
+            let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720))
+            let compositor = CardOverlayCompositor()
+            compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .bottom))
+            compositor.updatePaint(layer)
+            return try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        }
+        let brush = BrushStroke(
+            stroke: PaintStroke(color: color, points: [CGPoint(x: xSpan.lowerBound, y: 0.2), CGPoint(x: xSpan.upperBound, y: 0.2)]),
+            endedAt: endedAt, fadeDuration: 1.5
+        )
+        let painted = try render(layer: PaintLayer(brushStrokes: [brush], pointer: nil))
+        let baseline = try render(layer: PaintLayer(brushStrokes: [], pointer: nil))
+        return (painted, baseline)
+    }
+
+    /// Mean tunnel change beside the stroke centerline (rows ±3-6: inside
+    /// the halo, outside the color). Positive = darkened, negative =
+    /// lightened, near zero = no halo.
+    private func tunnelChange(painted: CVPixelBuffer, baseline: CVPixelBuffer, strokeRow: Int, xFraction: Range<Double>) -> Double {
+        (meanLuminanceDrop(painted: painted, baseline: baseline, rows: strokeRow + 3 ..< strokeRow + 6, xFraction: xFraction)
+            + meanLuminanceDrop(painted: painted, baseline: baseline, rows: strokeRow - 6 ..< strokeRow - 3, xFraction: xFraction)) / 2
+    }
+
+    /// Red brush (luminance ~128) on the mid-tone photo (~160) earns a
+    /// WHITE halo (line darker than bg): the tunnel must read lighter
+    /// than baseline while the red line stays strong.
+    func testRedBrushWhiteHalosOnMidTonePhoto() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let photoX = 0.7 ..< 0.85
+        let (painted, baseline) = try renderBrushOverCard(imageData: makeBusyImageData(), color: .red, endedAt: nil)
+        XCTAssertGreaterThan(redStdev(baseline, rows: strokeRow - 10 ..< strokeRow + 10, xFraction: photoX), 10,
+                              "photo must render in the sampled region")
+        XCTAssertLessThan(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: photoX), -20,
+                           "white halo must lighten the photo beside the stroke")
+        let lineRed = meanRed(painted, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+            - meanRed(baseline, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+        XCTAssertGreaterThan(lineRed, 60, "color line must stay strongly red over the photo")
+    }
+
+    /// Yellow brush (luminance ~209) on a white diagram card earns a DARK
+    /// halo: the tunnel must read darker while the yellow line (blue
+    /// deficit) stays strong.
+    func testYellowBrushDarkHalosOnWhiteCard() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let photoX = 0.7 ..< 0.85
+        let (painted, baseline) = try renderBrushOverCard(imageData: makeWhiteImageData(), color: .yellow, endedAt: nil)
+        XCTAssertGreaterThan(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: photoX), 30,
+                              "dark halo must darken the white card beside the stroke")
+        let blueDrop = meanBlue(baseline, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+            - meanBlue(painted, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+        XCTAssertGreaterThan(blueDrop, 80, "yellow line must keep its blue deficit on white")
+    }
+
+    /// Red brush on white already contrasts (gap 127): no halo, clean
+    /// tunnel, strong red-excess line.
+    func testRedBrushSkipsHaloOnWhiteCard() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let photoX = 0.7 ..< 0.85
+        let (painted, baseline) = try renderBrushOverCard(imageData: makeWhiteImageData(), color: .red, endedAt: nil)
+        XCTAssertLessThan(abs(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: photoX)), 8,
+                           "no halo when the line already contrasts")
+        let excess = meanRedExcess(painted, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+            - meanRedExcess(baseline, rows: strokeRow - 1 ..< strokeRow + 1, xFraction: photoX)
+        XCTAssertGreaterThan(excess, 60, "red line must stay strong on white")
+    }
+
+    /// Yellow brush confined to the dark text band (gap 170+): no halo.
+    func testYellowBrushSkipsHaloOnDarkText() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let textX = 0.15 ..< 0.4
+        let (painted, baseline) = try renderBrushOverCard(imageData: makeBusyImageData(), color: .yellow, endedAt: nil, xSpan: 0.15 ..< 0.4)
+        XCTAssertLessThan(abs(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: textX)), 8,
+                           "no halo when the line already contrasts")
+    }
+
+    /// The halo lingers into the fade: halfway through (alpha ~0.5)
+    /// the yellow-on-white tunnel must still read near full strength
+    /// (a same-curve halo would already be half gone).
+    func testYellowHaloLingersIntoFadeOnWhite() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let photoX = 0.7 ..< 0.85
+        let (painted, baseline) = try renderBrushOverCard(
+            imageData: makeWhiteImageData(), color: .yellow,
+            endedAt: Date().addingTimeInterval(-0.75)
+        )
+        XCTAssertGreaterThan(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: photoX), 80,
+                              "halo must still separate the fading line from white")
+    }
+
+    /// Committed annotation strokes (full alpha) paint no halo: pixels
+    /// beside the line must match the card-only baseline.
+    func testCommittedStrokeHasNoHalo() throws {
+        let strokeRow = Int((1 - 0.2) * 720)
+        let photoX = 0.7 ..< 0.85
+        let card = PresentationCard(title: "Title here", message: "Some message text here", imageData: makeBusyImageData())
+        func render(layer: PaintLayer) throws -> CVPixelBuffer {
+            let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720))
+            let compositor = CardOverlayCompositor()
+            compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .bottom))
+            compositor.updatePaint(layer)
+            return try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        }
+        let stroke = PaintStroke(color: .red, points: [CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.9, y: 0.2)])
+        let painted = try render(layer: PaintLayer(strokes: [stroke], pointer: nil))
+        let baseline = try render(layer: PaintLayer(strokes: [], pointer: nil))
+        XCTAssertLessThan(tunnelChange(painted: painted, baseline: baseline, strokeRow: strokeRow, xFraction: photoX), 6,
+                           "committed strokes must not darken beside the line")
+    }
+
     func testZoomedPictureCoversMorePixels() throws {
         let card = PresentationCard(title: "Slide 2", message: "", imageData: makeTestImageData())
         func render(zoom: CGFloat) throws -> CVPixelBuffer {
@@ -1071,6 +1341,89 @@ final class CaptureResolutionTests: XCTestCase {
     func testSessionPresetsAre169() {
         XCTAssertEqual(CaptureResolution.hd720.sessionPreset, .hd1280x720)
         XCTAssertEqual(CaptureResolution.hd1080.sessionPreset, .hd1920x1080)
+    }
+
+    func testPixelSizesMatchPresets() {
+        XCTAssertEqual(CaptureResolution.hd720.pixelSize, CGSize(width: 1280, height: 720))
+        XCTAssertEqual(CaptureResolution.hd1080.pixelSize, CGSize(width: 1920, height: 1080))
+    }
+}
+
+final class MouseBrushMappingTests: XCTestCase {
+    private let video = CGSize(width: 1280, height: 720)
+
+    func testCenterMapsToCenterUnmirrored() {
+        let p = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 160, y: 90), viewSize: CGSize(width: 320, height: 180),
+            videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(p.x, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(p.y, 0.5, accuracy: 1e-9)
+    }
+
+    func testCornersMapToCornersUnmirrored() {
+        let view = CGSize(width: 320, height: 180)
+        let bottomLeft = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 0, y: 0), viewSize: view, videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(bottomLeft.x, 0, accuracy: 1e-9)
+        XCTAssertEqual(bottomLeft.y, 0, accuracy: 1e-9)
+        let topRight = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 320, y: 180), viewSize: view, videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(topRight.x, 1, accuracy: 1e-9)
+        XCTAssertEqual(topRight.y, 1, accuracy: 1e-9)
+    }
+
+    func testMirroredFlipsXOnly() {
+        let view = CGSize(width: 320, height: 180)
+        let left = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 0, y: 90), viewSize: view, videoSize: video, mirrored: true
+        )
+        XCTAssertEqual(left.x, 1, accuracy: 1e-9)
+        XCTAssertEqual(left.y, 0.5, accuracy: 1e-9)
+        let right = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 320, y: 90), viewSize: view, videoSize: video, mirrored: true
+        )
+        XCTAssertEqual(right.x, 0, accuracy: 1e-9)
+    }
+
+    func testAspectFillCropOffsetsIntoVideo() {
+        // Square view on 16:9 video: sides crop. Scale = 200/180, shown
+        // width 355.56, crop 77.78/side: left edge reads x = 0.21875.
+        let p = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 0, y: 100), viewSize: CGSize(width: 200, height: 200),
+            videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(p.x, 0.21875, accuracy: 1e-6)
+        XCTAssertEqual(p.y, 0.5, accuracy: 1e-9)
+        let center = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 100, y: 100), viewSize: CGSize(width: 200, height: 200),
+            videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(center.x, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(center.y, 0.5, accuracy: 1e-9)
+    }
+
+    func testDragsOutsideClampOntoFrame() {
+        let view = CGSize(width: 320, height: 180)
+        let farLeft = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: -1000, y: 90), viewSize: view, videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(farLeft.x, 0, accuracy: 1e-9)
+        let farTop = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 160, y: 1180), viewSize: view, videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(farTop.y, 1, accuracy: 1e-9)
+    }
+
+    func testDegenerateSizesFallBackToCenter() {
+        let p = MouseBrushMonitorView.normalizedPaintPoint(
+            viewPoint: CGPoint(x: 10, y: 10), viewSize: CGSize.zero,
+            videoSize: video, mirrored: false
+        )
+        XCTAssertEqual(p.x, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(p.y, 0.5, accuracy: 1e-9)
     }
 }
 

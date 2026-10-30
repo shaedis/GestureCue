@@ -106,6 +106,7 @@ final class AppViewModel: ObservableObject {
     private static let detectionPausedKey = "GestureCue.detectionPaused"
     private var cancellations = Set<AnyCancellable>()
     private var commandWindow = CommandWindow()
+    private var lastPaintActivity = Date.distantPast
     private var windowTask: Task<Void, Never>?
     private var virtualCameraTask: Task<Void, Never>?
     /// Listening-dot state burned into the program feed. Synced to the
@@ -219,6 +220,12 @@ final class AppViewModel: ObservableObject {
             armCommandWindow()
         } else {
             setPaused(true)
+        }
+        // Paint/brush strokes are user activity too: without this the
+        // window idles out mid-brush and painting silently parks.
+        paintController.sink = { [compositor, weak self] layer in
+            compositor.updatePaint(layer)
+            Task { [weak self] in await self?.notePaintActivity() }
         }
     }
 
@@ -519,13 +526,33 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    /// A fired gesture command pushes window expiry out.
+    /// User activity pushes window expiry out.
     private func registerCommandActivity() {
         guard !detectionPaused else { return }
         commandWindow.registerActivity(at: Date())
         commandWindowRemaining = commandWindow.remaining(at: Date())
         lastDotState = .green
         syncOverlay()
+    }
+
+    /// A paint/brush layer change pushes window expiry out (throttled:
+    /// strokes push per frame, but the deadline only needs a nudge).
+    /// Called on the main actor from the paint sink.
+    private func notePaintActivity() {
+        let now = Date()
+        guard now.timeIntervalSince(lastPaintActivity) >= 2 else { return }
+        lastPaintActivity = now
+        registerCommandActivity()
+    }
+
+    /// Mouse brush on the program monitor. Explicit UI input: works
+    /// whether or not the command window is open, like buttons/keys.
+    func mouseBrush(_ event: MouseBrushEvent) {
+        switch event {
+        case let .down(point): paintController.mouseBrushDown(at: point)
+        case let .moved(point): paintController.mouseBrushMoved(to: point)
+        case .up: paintController.mouseBrushUp()
+        }
     }
 
     private func setPaused(_ paused: Bool) {

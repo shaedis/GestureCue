@@ -2,8 +2,8 @@
 
 ## Automated (agent, every build)
 
-- [ ] `xcodebuild -scheme GestureCue -destination 'platform=macOS' test` — all green (baseline: 282)
-- [ ] Zero build warnings (`warning:` empty apart from AppIntents metadata noise)
+- [ ] `xcodebuild -scheme GestureCue -destination 'platform=macOS' test` — all green (baseline: 363)
+- [ ] Zero build warnings (`warning:` empty apart from AppIntents metadata noise; 1 known minor pre-existing in `StudioViewModel.swift:256`, unused result)
 - [ ] `make app` + `codesign --verify --deep --strict build/GestureCue.app`
 - [ ] Window title shows the new build number
 
@@ -17,7 +17,6 @@
 
 - [ ] `git status` reviewed: only intended files; `.env` untracked + ignored
 - [ ] No API keys, private lessons, or secrets in the diff (`git diff` scanned)
-- [ ] Local-only docs (`prompts/`, `instruction.md`, `visual_Pedagocical_generator.md`,
-      `fix-issues.md`, `next_step_1.md`, `new-features.md`) stay uncommitted
+- [ ] Local-only paths (`prompts/`, `instruction.md`, `.env`) stay uncommitted (tracked dev docs like `fix-issues.md` / `next_step_*.md` ship with history by decision)
 - [ ] PROGRESS.md + AGENTS.md resume notes current
 - [ ] Commit + push + tag only on explicit user go

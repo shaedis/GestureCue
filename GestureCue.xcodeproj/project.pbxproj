@@ -17,6 +17,7 @@
 		100000000000000000000208 /* GestureActionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000108 /* GestureActionRouter.swift */; };
 		100000000000000000000209 /* HandGestureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000109 /* HandGestureDetector.swift */; };
 		10000000000000000000021B /* FingerPaintController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000011B /* FingerPaintController.swift */; };
+		1000000000000000000002A3 /* BrushShapeClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000002A2 /* BrushShapeClassifier.swift */; };
 		10000000000000000000020A /* VideoCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010A /* VideoCaptureService.swift */; };
 		10000000000000000000020B /* AVFoundationVideoCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010B /* AVFoundationVideoCaptureService.swift */; };
 		10000000000000000000020C /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000010C /* CameraManager.swift */; };
@@ -99,6 +100,7 @@
 		100000000000000000000108 /* GestureActionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureActionRouter.swift; sourceTree = "<group>"; };
 		100000000000000000000109 /* HandGestureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetector.swift; sourceTree = "<group>"; };
 		10000000000000000000011B /* FingerPaintController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerPaintController.swift; sourceTree = "<group>"; };
+		1000000000000000000002A2 /* BrushShapeClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushShapeClassifier.swift; sourceTree = "<group>"; };
 		10000000000000000000010A /* VideoCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCaptureService.swift; sourceTree = "<group>"; };
 		10000000000000000000010B /* AVFoundationVideoCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVFoundationVideoCaptureService.swift; sourceTree = "<group>"; };
 		10000000000000000000010C /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				100000000000000000000108 /* GestureActionRouter.swift */,
 				100000000000000000000109 /* HandGestureDetector.swift */,
 				10000000000000000000011B /* FingerPaintController.swift */,
+				1000000000000000000002A2 /* BrushShapeClassifier.swift */,
 			);
 			path = Gestures;
 			sourceTree = "<group>";
@@ -509,6 +512,7 @@
 				100000000000000000000208 /* GestureActionRouter.swift in Sources */,
 				100000000000000000000209 /* HandGestureDetector.swift in Sources */,
 				10000000000000000000021B /* FingerPaintController.swift in Sources */,
+				1000000000000000000002A3 /* BrushShapeClassifier.swift in Sources */,
 				100000000000000000000285 /* GenerationModels.swift in Sources */,
 				100000000000000000000286 /* MetaModelClient.swift in Sources */,
 				100000000000000000000287 /* CredentialStore.swift in Sources */,

@@ -1,9 +1,11 @@
-# GestureCue — External Review Brief (Build 62)
+# GestureCue — External Review Brief (Build 76)
 
 > HOW TO USE: paste this whole document to the judging model, ideally with
 > read access to the repo at branch `visual-pedagogy` (work in progress,
 > based on `main` at tag `main-build-45`; earlier milestones tagged
-> `virtual-camera-works`, `virtual-camera-build-45`).
+> `virtual-camera-works`, `virtual-camera-build-45`,
+> `visual-pedagogy-build-71`). Builds 46–71 are committed and pushed
+> (`3474dc9`); Builds 72–76 are staged and tested but uncommitted.
 > The judging ask is at the bottom.
 
 ## 1. What this is
@@ -24,7 +26,7 @@ command window, so normal signing never triggers actions.
   the API key lives in the Keychain and per-source approval gates every
   network call.
 - Repo: Xcode project + Makefile (`make build|test|app|run|open|clean`),
-  XCTest suite (256 tests), docs + manual checklists in `docs/`.
+  XCTest suite (363 tests), docs + manual checklists in `docs/`.
 
 ## 2. Architecture (as claimed)
 
@@ -38,11 +40,16 @@ command window, so normal signing never triggers actions.
   cooldown/debounce) → `GestureActionRouter` (user mapping) → card store.
 - Command listening latches: rest state ignores hands; still open palm
   (2 s) / Listen button / L arms, still fist (2 s) / Stop / L ends,
-  5 idle minutes auto-end. A corner dot is burned into the program feed
-  while listening (green, amber in the last minute).
+  5 idle minutes auto-end (any user activity — fired commands, zoom
+  steps, paint/brush strokes — refreshes the deadline). A corner dot
+  is burned into the program feed while listening (green, amber in
+  the last minute).
 - Video path: `CardOverlayCompositor` renders camera + card layouts +
   pointer + paint/brush strokes into pooled pixel buffers (target
-  1280×720 @ 30). Destinations behind a `VideoOutputService` protocol:
+  1280×720 @ 30); fading brush strokes snap to lines/ellipses on
+  release (`BrushShapeClassifier`, aspect-uniform geometry) and paint
+  an adaptive legibility halo (contrast-triggered, polarity-aware,
+  per-segment). Destinations behind a `VideoOutputService` protocol:
   in-app program monitor, OBS capture window, MP4 recorder
   (Movies/GestureCue, H.264, video-only), and the native virtual camera.
 - Virtual camera: CoreMediaIO camera extension (own target, embedded
@@ -67,8 +74,8 @@ command window, so normal signing never triggers actions.
   for exact content, else Muse Image illustration composed with title
   + labels); presentation imports (PDF/PowerPoint) plan faithful
   verbatim splits (quote/near-quote, order-preserving, empty art
-  prompts, null diagrams, temperature 0.1) that ship text-only with
-  no image API calls.
+  prompts, null diagrams, temperature 0.1) that ship with the author's
+  original images reattached and no image API calls.
 - Studio workspace integrity: dirty tracking across source/drafts/
   title; New and new-source imports over unsaved drafts raise
   Save/Discard/Cancel; adopting new source clears stale drafts and
@@ -83,7 +90,7 @@ command window, so normal signing never triggers actions.
   main actor. Protocols + DI for classification/routing/generation for
   testability.
 
-## 3. Feature inventory (as claimed working, user-verified on camera)
+## 3. Feature inventory (as claimed working; the oldest items are user-verified on camera, the newest are pending the ST gate — see §5)
 
 - 8 gestures: palm, fist, thumbs-up, thumb-left/right, index / two- /
   three-finger. Defaults (mapping v5): palm→show, thumbs-up→hide,
@@ -94,13 +101,21 @@ command window, so normal signing never triggers actions.
 - Presentations: catalog (create/rename/delete), PDF + PowerPoint
   (.pptx/.ppt/.ppsx via LibreOffice) import as slide cards.
 - Card layout: bottom/left/right presets, fullscreen expand, pinch zoom
-  on pictures (up to 4×), per-card pictures.
+  on pictures (up to 4×), per-card pictures. Video + Card mode places
+  the card panel left/right/bottom with the whole camera aspect-fit in
+  the opposite tile (persisted "Card panel" picker).
 - Finger paint mode: pinch thumb+index to draw persistent per-card
   strokes (Yellow/Red, undo/redo/clear); index-family gestures
   suppressed while painting.
 - Two-finger brush (index+middle): freehand strokes that fade ~1.5 s
   after release; zoom-exclusive by finger pattern; resembling command
-  suppressed while brushing; cleared on card/mode switch.
+  suppressed while brushing; cleared on card/mode switch. Straight
+  drags snap to clean horizontal/vertical lines and closed loops to
+  ellipses on release (diagonals/scribbles stay freehand); an adaptive
+  halo under the fading line keeps strokes legible over busy photos
+  and white diagrams. Paint/brush activity keeps the command window
+  alive. (Mouse brush on the program monitor was implemented but is
+  parked unverified as a future feature — see §6.)
 - Outputs: program monitor, OBS window, MP4 recording, native virtual
   camera with activation UI (Enable/Stop/Uninstall, approval + reboot
   guidance, honest Live/waiting status via sink-connectivity ticker).
@@ -110,10 +125,14 @@ command window, so normal signing never triggers actions.
   constrain lengths and split overlong concepts across cards.
 - AI Studio: import (paste, PDF, PowerPoint, Markdown/TXT, notebooks,
   AI decks), lesson settings (audience/level/subject/style/language/
-  cards), Keychain key entry, per-source approval-gated generation
-  with progress + cancel, editable drafts (texts, labels, prompt
-  editing, regenerate/remove), save to catalog collections. Subjects
-  include Bible / Religious (verse word-for-word rule).
+  cards, optional AI Instructions), Keychain key entry, per-source
+  approval-gated generation with progress + cancel, editable drafts
+  (texts, labels, prompt editing, regenerate/remove with per-card
+  progress), save to catalog collections (model-suggested, persisted).
+  Subjects include Bible / Religious (verse word-for-word rule).
+  Adult audiences get respectful adult prose (no defining common
+  knowledge); importing a picture deck/PDF reattaches the author's
+  original images to the generated cards.
 - Studio workspace: New with ask-to-save; imports clear stale drafts
   (guarded when unsaved); deck menus offer AI Studio decks only;
   "Edit Existing Deck…" round-trips artwork + prompts with per-card
@@ -121,13 +140,13 @@ command window, so normal signing never triggers actions.
   "Refresh Text" re-composes wording free; single Studio window
   (repeat opens focus it).
 - Faithful presentation mode: PDF/PowerPoint imports split the
-  author's pages/slides verbatim into text-only cards — no rewritten
-  text, no new illustrations/diagrams, no image API cost; Studio
-  shows a faithful-mode caption.
+  author's pages/slides verbatim into cards with the original images
+  reattached — no rewritten text, no new illustrations/diagrams, no
+  image API cost; Studio shows a faithful-mode caption.
 - Accessibility UI: large text, contrast, VoiceOver labels, visible
   status; no sound dependence. Mouse/keyboard actions always work.
 
-## 4. Recent work (Builds 36–62)
+## 4. Recent work (Builds 36–76)
 
 - 36–40: extension target, provisioning (team X8YHS47G23), activation,
   sink discovery hardening, stable device/stream UUIDs, diagnostics.
@@ -139,7 +158,7 @@ command window, so normal signing never triggers actions.
   frame), persisted resolution actually pushed on start (was dropped).
 - 44: trigger-timing slider. 45: fading brush. Merged to `main`.
 - 46–47: AI foundation + Studio + diagram renderer on branch
-  `visual-pedagogy` (uncommitted): Meta API client, Keychain/in-memory
+  `visual-pedagogy`: Meta API client, Keychain/in-memory
   credential stores, 4-kind diagram renderer, illustration composer,
   generator actor, Studio window. Live-verified both API endpoints
   (Spark envelope matches parser; ~150+ reasoning tokens precede
@@ -191,24 +210,46 @@ command window, so normal signing never triggers actions.
   knowledge; adult-prose rule; children unchanged; live-probed).
 - 68: Video + Card tile placement (video left/right/bottom; top panel
   side-splits; persisted).
+- 69: fewer-cards confirmation (source segments outnumber Cards →
+  Generate/Cancel alert).
 - 70: reframed as card placement (Card panel Left/Right/Bottom;
   video opposite/top); default keeps previous visuals.
 - 71: per-card regeneration spinner + button disabling.
-- 69: fewer-cards confirmation (source segments outnumber Cards →
-  Generate/Cancel alert).
-- Test count grew 179 → 329 across these builds, suite green throughout
+- 72: brush shape snapping on release (`BrushShapeClassifier`, no ML;
+  14 tests).
+- 73: FIX (user report: brush "not recorded" over images in Zoom) —
+  lab-verified the stroke IS composited and encoder-preserved over
+  photos, diagnosed a contrast/visibility failure, and added a dark
+  legibility halo under fading brush strokes (same fade curve;
+  committed strokes unchanged; 2 tests). SUPERSEDED by 75's adaptive
+  halo — judge the Build 75 design, not this one.
+- 74: FIX (brush "stopped" mid-session) — paint/brush activity now
+  refreshes the 5-minute command window (was: fired commands only);
+  mouse brush implemented (press-drag-release, same fade/snap
+  semantics, works paused; 14 tests) — parked unverified in 76.
+- 75: FIX (brush invisible on white diagrams) — the fixed dark halo
+  blinded yellow mid-fade and muddied red-on-white; halos are now
+  per-segment adaptive (sampled-bg trigger, away-from-line polarity,
+  linger-into-fade curve; 6 halo tests).
+- 76: mouse brush parked as a future feature (no crosshair on-site,
+  cause undetermined, user chose to skip debugging); on-screen
+  promise removed, code stays inert and tested, spec filed in
+  `docs/PENDING-FEATURES.md`.
+- Test count grew 179 → 363 across these builds, suite green throughout
   (`xcodebuild test`), staged apps deep-codesign-verified.
 
 ## 5. Verification status (as claimed)
 
-- Automated: 329/329 XCTest green — classifier geometry, thresholds,
+- Automated: 363/363 XCTest green — classifier geometry, thresholds,
   stabilization, cooldown/debounce, stillness gating, mapping, card
-  transitions, paint/brush/fade math, compositing, layout/fit helpers,
-  title wrapping, virtual-camera service/scaler, AI client/importer/
-  diagrams/generator/round-trip/fidelity/provenance, PPTX extraction
-  (embedded fixture), PPTX/PDF image extraction (hand-built fixtures,
-  pixel-exact asserts), PDF kind routing (mocked transport; no network
-  in tests).
+  transitions, paint/brush/fade math, brush shape-snapping, adaptive
+  halo (deterministic fixtures; trigger/polarity/linger matrix),
+  mouse brush lifecycle + monitor mapping (crop/mirror/clamp),
+  compositing, layout/fit helpers, title wrapping, virtual-camera
+  service/scaler, AI client/importer/diagrams/generator/round-trip/
+  fidelity/provenance, PPTX extraction (embedded fixture), PPTX/PDF
+  image extraction (hand-built fixtures, pixel-exact asserts), PDF
+  kind routing (mocked transport; no network in tests).
 - Manual (user, on camera): gestures fire, listening latch, paint,
   brush appearance + fade, Zoom + QuickTime show full card at both
   resolutions, enable/disable/uninstall flows.
@@ -225,12 +266,15 @@ command window, so normal signing never triggers actions.
   cards verbatim from slide-style source, empty art prompts, null
   diagrams. Full in-app faithful run (import real PP → generate →
   save → present) NOT yet run.
-- Studio manual gate (ST-01..12: key round-trip, import, in-app
-  generate/review/save, present over Zoom, gestures, brush, cancel):
-  NOT yet run — pending user with Build 62 Studio (ST-01/02 smoke-passed
-  on 51 before the later fixes). fix-issues.md items (#1–5: single
-  window, New+ask-to-save, AI-only menus, stale-draft clearing,
-  main-close behavior) also pending user verification on Build 57.
+- Studio manual gate (ST-01..16: key round-trip, import, in-app
+  generate/review/save, present over Zoom, gestures, brush shapes,
+  brush legibility over photos + white diagrams,
+  window-alive-while-brushing, cancel; ST-16 mouse brush parked):
+  NOT yet run — pending user with Build 76 Studio
+  (ST-01/02 smoke-passed on 51 before the later fixes).
+  fix-issues.md items (#1–5: single window, New+ask-to-save,
+  AI-only menus, stale-draft clearing, main-close behavior) also
+  pending user verification on Build 57.
 - Formal VC-01..07 manual checklist: NOT yet run end-to-end.
 - Hardware/network-bound paths (real CMIO sink, Center Stage switch,
   live plan/image calls, Keychain roundtrip) have no unit tests by
@@ -248,13 +292,20 @@ command window, so normal signing never triggers actions.
   reset path (`systemextensionsctl uninstall` is SIP-blocked).
 - AI Studio gaps: no visual layout editor (resize/reposition elements),
   no cross-deck card move/duplicate; legacy .ppt needs conversion to
-  .pptx; original slide images are not extracted (faithful cards are
-  text-only).
+  .pptx; PDF Lab/16-bit images are skipped (rare).
+- The program monitor and OBS windows display aspect-fill
+  (`.resizeAspectFill`): they crop the frame edges when their aspect
+  differs from 16:9, while the virtual-camera feed and MP4 carry the
+  full frame. Display only — the feed itself is intact.
 - Motion-gesture triggers deliberately NOT implemented (signing is
   motion; still-holds only) — parked by user decision.
 - Split-view presentation layout (picture tile + text band together)
   proposed and assessed, parked in `docs/PENDING-FEATURES.md` awaiting
   user approval — NOT implemented.
+- Mouse brush (Build 74) parked in `docs/PENDING-FEATURES.md` as a
+  future feature: implemented and unit-tested but never verified
+  on-site (no crosshair; cause undetermined). The code is inert in
+  the tree — judge it as dead-until-reactivated, not as working.
 - Phase 2 leftovers (Top preset, appearance) skipped as low value.
 
 ## 7. Judging ask (to the reviewing model)

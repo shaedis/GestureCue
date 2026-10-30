@@ -8,6 +8,10 @@ DerivedData/
 # Dev-process docs stay local (not needed for the public repo).
 prompts/
 instruction.md
+
+# API keys and local secrets must never be committed.
+.env
+.env.*
 old-ignore/
 
 # Scratch and tool artifacts.

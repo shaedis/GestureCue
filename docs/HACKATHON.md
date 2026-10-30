@@ -38,21 +38,44 @@ A Meta AI-powered lesson generator inside the native macOS app:
 - **Subjects incl. Bible/Religious** with a verse word-for-word rule;
   Swedish + English lesson language support (Build 49).
 
+## Studio polish + output legibility (Builds 59–76)
+
+- **Catalog UX** — "Diverse" collection, model-suggested collections
+  (approval-gated, persisted), card N/M badge on video, per-card
+  regeneration spinner, fewer-cards confirmation, save flashes green
+  then closes (Builds 59–61, 66, 69, 71).
+- **Original-image reattachment** — PowerPoint slide rels and PDF
+  XObjects feed the author's own pictures back onto generated cards
+  (Builds 63–64).
+- **Prompt control** — optional AI Instructions (blank = identical
+  default; provided = labelled, subordinated), adult prose for adult
+  audiences (Builds 65, 67).
+- **Video + Card placement** — card panel Left/Right/Bottom with the
+  whole camera aspect-fit opposite (Builds 62, 68, 70).
+- **Brush legibility** — shape snapping on release (lines/ellipses,
+  no ML), per-segment adaptive halo over photos and white diagrams,
+  paint activity keeps the command window alive (Builds 72–75).
+- Mouse brush implemented then parked as a future feature (Builds
+  74/76; see `docs/PENDING-FEATURES.md`).
+
 ## Verification produced
 
-- 273 XCTest tests (from 179), zero warnings; strict-schema and
-  faithful-prompt behavior proven against the live API; composited
-  720p + small-tile readability reviewed from real pipeline output.
-- Manual gates defined: ST-01..12 (Studio), VC-01..07 (virtual
-  camera), fix-issues.md, demo flows — pending the human + camera +
-  Zoom runs recorded in `docs/USER-VERIFICATION-GATE.md`.
-- Review pack for judges: `docs/EXTERNAL-REVIEW.md` (adversarial
-  brief), `docs/DEMO-SCRIPT.md` (3-minute demo), this file.
+- 363 XCTest tests (from 179), one known minor pre-existing warning;
+  strict-schema and faithful-prompt behavior proven against the live
+  API; composited 720p + small-tile readability reviewed from real
+  pipeline output; encoder round-trips (H.264, downscale, low
+  bitrate) used to diagnose brush legibility.
+- Manual gates run by the user: ST-01..14 + flows H/F/P checked,
+  VC-02/03/04/06/07 checked; outstanding: ST-15, VC-01/05 (ST-16
+  parked with the mouse brush). Records live in
+  `docs/USER-VERIFICATION-GATE.md`.
+- Review pack for judges: `HACKATHON-SUBMISSION.md` (one page),
+  `docs/EXTERNAL-REVIEW.md` (adversarial brief),
+  `docs/DEMO-SCRIPT.md` (3-minute demo), this file.
 
 ## Deliberately not built
 
 Motion-gesture triggers (signing is motion — still-holds only),
-visual layout editor, cross-deck move/duplicate, original slide-image
-extraction, split-view layout (parked in `docs/PENDING-FEATURES.md`
-awaiting approval), `docs/new-features.md` items (straight-line
-brush, card numbers — filed, not started).
+visual layout editor, cross-deck move/duplicate, split-view layout
+and mouse brush (both parked in `docs/PENDING-FEATURES.md`), Phase 2
+leftovers (Top preset, appearance).

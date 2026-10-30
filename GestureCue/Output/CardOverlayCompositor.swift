@@ -297,6 +297,64 @@ final class CardOverlayCompositor: VideoCompositor, @unchecked Sendable {
         return max(0, 1 - now.timeIntervalSince(endedAt) / fadeDuration)
     }
 
+    /// Halo trigger threshold: line-vs-background luminance gap below
+    /// this earns a halo (0-255 units). Red-on-white (127) and any color
+    /// on dark cards (90+) stay clean; yellow-on-white (46) and colors
+    /// on mid-tone photos halo.
+    static let haloTriggerGap: Double = 80
+    /// Background luminance above which a dark tunnel is the only
+    /// separator (a white halo would be invisible on near-white).
+    static let haloNearWhite: Double = 210
+    /// Long stroke runs subdivide to this normalized step so each
+    /// halo segment samples its own local background.
+    static let haloSampleStep: CGFloat = 0.05
+
+    /// Rec. 601 luminance of an RGB color in 0-255 units.
+    static func luminance(of color: CGColor) -> Double {
+        guard let components = color.components, components.count >= 3 else { return 0 }
+        return (0.299 * Double(components[0]) + 0.587 * Double(components[1]) + 0.114 * Double(components[2])) * 255
+    }
+
+    /// Mean background luminance (0-255) sampled from the live BGRA
+    /// buffer over the stroke's pixel bbox inflated by `radius`
+    /// (stride-capped to ~400 samples). Nil when there is nothing to
+    /// sample. The caller must hold the buffer lock.
+    static func backgroundLuminance(
+        around points: [CGPoint], pixel: (CGPoint) -> CGPoint,
+        buffer: UnsafeMutableRawPointer, width: Int, height: Int,
+        bytesPerRow: Int, radius: CGFloat
+    ) -> Double? {
+        guard !points.isEmpty, width > 0, height > 0 else { return nil }
+        var minX = width, maxX = 0, minY = height, maxY = 0
+        for point in points {
+            let c = pixel(point)
+            // CG points are y-up; buffer memory rows are y-down (row 0
+            // is the displayed top).
+            let memY = CGFloat(height - 1) - c.y
+            minX = min(minX, Int(c.x - radius)); maxX = max(maxX, Int(c.x + radius))
+            minY = min(minY, Int(memY - radius)); maxY = max(maxY, Int(memY + radius))
+        }
+        minX = max(0, minX); minY = max(0, minY)
+        maxX = min(width - 1, maxX); maxY = min(height - 1, maxY)
+        guard maxX >= minX, maxY >= minY else { return nil }
+        let spanX = maxX - minX + 1, spanY = maxY - minY + 1
+        let stride = max(1, Int((Double(spanX * spanY) / 400).squareRoot()))
+        var sum = 0.0, count = 0
+        var y = minY
+        while y <= maxY {
+            let row = buffer.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            var x = minX
+            while x <= maxX {
+                sum += 0.299 * Double(row[x * 4 + 2]) + 0.587 * Double(row[x * 4 + 1]) + 0.114 * Double(row[x * 4])
+                count += 1
+                x += stride
+            }
+            y += stride
+        }
+        guard count > 0 else { return nil }
+        return sum / Double(count)
+    }
+
     /// Draws committed + active paint strokes and fading brush strokes
     /// (clipped to the card, only when the card is visible) plus the live
     /// fingertip pointer.
@@ -329,34 +387,89 @@ final class CardOverlayCompositor: VideoCompositor, @unchecked Sendable {
             ctx.clip(to: Self.cardRect(width: width, height: height, position: position, cardPanel: cardPanel, expanded: expanded))
             ctx.setLineCap(.round)
             ctx.setLineJoin(.round)
-            ctx.setLineWidth(max(3, h * 0.008))
-            func draw(_ stroke: PaintStroke, alpha: CGFloat) {
-                let base = stroke.color.markerColor
-                let color = alpha >= 1 ? base : (base.copy(alpha: alpha) ?? base)
+            let lineWidth = max(3, h * 0.008)
+            ctx.setLineWidth(lineWidth)
+            // Fading brush strokes get an adaptive halo under the color
+            // line: it appears only when the line's luminance is close to
+            // the sampled background (a thin fading line otherwise drops
+            // below visibility, e.g. yellow on a white diagram — while
+            // red on white or any color on dark cards needs nothing).
+            // Polarity pushes the tunnel AWAY from the line color (dark
+            // halo above the line, white below it — except on near-white,
+            // where only a dark tunnel separates), so the fade can never
+            // sweep the tunnel through the line color; the halo lingers
+            // slightly into the fade and both reach zero together, so the
+            // gradual-vanish feel is untouched and nothing ghosts.
+            func draw(_ stroke: PaintStroke, alpha: CGFloat, halo: Bool) {
+                let marker = stroke.color.markerColor
+                let color = alpha >= 1 ? marker : (marker.copy(alpha: alpha) ?? marker)
+                let lineLum = halo ? Self.luminance(of: marker) : 0
+                let haloAlpha = 0.55 * min(1, 2 * alpha)
+                /// Halo color separating this background sample from the
+                /// line, or nil when the line already contrasts it.
+                func haloForBg(_ bgLum: Double) -> CGColor? {
+                    guard abs(lineLum - bgLum) < Self.haloTriggerGap else { return nil }
+                    let dark = lineLum >= bgLum || bgLum > Self.haloNearWhite
+                    return CGColor(gray: dark ? 0 : 1, alpha: haloAlpha)
+                }
+                func bgAround(_ points: [CGPoint]) -> Double? {
+                    Self.backgroundLuminance(
+                        around: points, pixel: pixel, buffer: base,
+                        width: width, height: height, bytesPerRow: bytesPerRow, radius: lineWidth
+                    )
+                }
                 if stroke.points.count == 1, let dot = stroke.points.first {
                     let c = pixel(dot)
                     let r = max(2, h * 0.006)
+                    if halo, let bgLum = bgAround([dot]), let haloColor = haloForBg(bgLum) {
+                        ctx.setFillColor(haloColor)
+                        ctx.fillEllipse(in: CGRect(x: c.x - r * 2, y: c.y - r * 2, width: r * 4, height: r * 4))
+                    }
                     ctx.setFillColor(color)
                     ctx.fillEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
                 } else if stroke.points.count > 1 {
-                    ctx.setStrokeColor(color)
                     let path = CGMutablePath()
                     path.move(to: pixel(stroke.points[0]))
                     for point in stroke.points.dropFirst() {
                         path.addLine(to: pixel(point))
                     }
+                    if halo {
+                        // Per-segment halos: a stroke can cross dark text
+                        // into a white photo, so each short run samples
+                        // its own background (long runs subdivide).
+                        ctx.setLineWidth(lineWidth * 2)
+                        for index in stroke.points.indices.dropFirst() {
+                            let a = stroke.points[index - 1], b = stroke.points[index]
+                            let runs = max(1, Int(ceil(hypot(b.x - a.x, b.y - a.y) / Self.haloSampleStep)))
+                            for run in 0 ..< runs {
+                                let t0 = CGFloat(run) / CGFloat(runs), t1 = CGFloat(run + 1) / CGFloat(runs)
+                                let p0 = CGPoint(x: a.x + (b.x - a.x) * t0, y: a.y + (b.y - a.y) * t0)
+                                let p1 = CGPoint(x: a.x + (b.x - a.x) * t1, y: a.y + (b.y - a.y) * t1)
+                                let mid = CGPoint(x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2)
+                                guard let bgLum = bgAround([mid]), let haloColor = haloForBg(bgLum) else { continue }
+                                ctx.setStrokeColor(haloColor)
+                                let seg = CGMutablePath()
+                                seg.move(to: pixel(p0))
+                                seg.addLine(to: pixel(p1))
+                                ctx.addPath(seg)
+                                ctx.strokePath()
+                            }
+                        }
+                        ctx.setLineWidth(lineWidth)
+                    }
+                    ctx.setStrokeColor(color)
                     ctx.addPath(path)
                     ctx.strokePath()
                 }
             }
             for stroke in layer.strokes {
-                draw(stroke, alpha: 1)
+                draw(stroke, alpha: 1, halo: false)
             }
             let now = Date()
             for brush in layer.brushStrokes {
                 let alpha = Self.brushAlpha(endedAt: brush.endedAt, at: now, fadeDuration: brush.fadeDuration)
                 guard alpha > 0 else { continue }
-                draw(brush.stroke, alpha: CGFloat(alpha))
+                draw(brush.stroke, alpha: CGFloat(alpha), halo: true)
             }
             ctx.restoreGState()
         }

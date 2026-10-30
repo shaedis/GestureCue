@@ -19,7 +19,7 @@ and [docs/](docs/) for manual test checklists and the OBS/Zoom setup guide.
 
 ```sh
 make build   # compile
-make test    # 282 XCTest tests (run in an unsandboxed shell)
+make test    # 363 XCTest tests (run in an unsandboxed shell)
 make app     # stage build/GestureCue.app
 make open    # restart + open the staged app
 ```
@@ -193,8 +193,8 @@ Setup:
    text for free, regenerate only changed cards), then save to a collection.
 
 PDF and PowerPoint imports run in faithful mode: the model splits your
-pages/slides verbatim to fit video cards — no rewritten text, no new
-illustrations or diagrams, and no image API cost.
+pages/slides verbatim to fit video cards — no rewritten text, your original
+images reattached, no new illustrations or diagrams, and no image API cost.
 
 Privacy: only your approved source text and illustration prompts leave the
 Mac, to the Meta Model API. Webcam frames are never transmitted. See the
@@ -210,12 +210,12 @@ The consolidated human gate (ST + VC steps with tick boxes) is
 One shared capture pipeline feeds analysis, output, and recording:
 
 ```
-AVFoundationVideoCaptureService (720p capture, frame fan-out)
+AVFoundationVideoCaptureService (720p/1080p capture, frame fan-out)
  ├── HandGestureDetector ── Vision hand pose → classifier → state machine
  │                          → AppViewModel → GestureActionRouter → card store
  ├── ProgramOutputPipeline ── CardOverlayCompositor → VideoOutputService
- │                             (in-app monitor now; CoreMediaIO virtual
- │                              camera later — same seam, no rewrite)
+ │                             (in-app monitor, OBS window, MP4 recorder,
+ │                              native CoreMediaIO virtual camera)
  └── VideoRecorder ── program frames → user-initiated MP4 (H.264, no audio)
 ```
 
@@ -237,12 +237,14 @@ no camera required.
 
 ## Testing
 
-282 XCTest unit tests in `GestureCueTests/` cover classification, confidence
+363 XCTest unit tests in `GestureCueTests/` cover classification, confidence
 thresholds, stabilization, hold-to-fire stillness, gesture→action mapping,
-card state transitions, paint, zoom, the command latch, compositing, the
-program pipeline, MP4 recording (incl. a real H.264 encode of synthetic
-frames), and the AI Studio (API client parsing, credential stores, source
-import, illustration composition, diagram validation, deck round-trip).
+card state transitions, paint, brush shape-snapping, the adaptive halo,
+mouse-brush mapping, zoom, the command latch, compositing, the program
+pipeline, MP4 recording (incl. a real H.264 encode of synthetic frames),
+and the AI Studio (API client parsing, credential stores, source import,
+illustration composition, diagram validation, deck round-trip, PPTX/PDF
+image extraction).
 Camera/Zoom/API behavior additionally needs the manual checklists in `docs/`
 plus live runs against the real Meta API.
 
@@ -272,5 +274,6 @@ plus live runs against the real Meta API.
    checklist. Continued work happens on branch `virtual-camera`.
 2. **AI Visual Education Studio:** implemented on branch
    `visual-pedagogy` (Meta Muse Spark + Muse Image, local diagrams,
-   catalog round-trip, Build 62); remaining: user manual verification
-   (ST-01..12) and merge decision.
+   catalog round-trip, original-image reattachment, brush legibility,
+   Build 76); user-verified ST-01..14 + flows H/F/P; remaining:
+   ST-15, VC-01/05, and the merge decision.

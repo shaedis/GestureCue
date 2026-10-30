@@ -1,8 +1,8 @@
-# GestureCue — 3-minute competition demo (Build 51)
+# GestureCue — 3-minute competition demo (Build 76)
 
-Setup: staged app in `/Applications`, camera on, Meta API key saved,
-Zoom open with **GestureCue Camera** selected. Have a history text and a
-fractions text ready to paste.
+Setup: staged app in `/Applications` (title shows Build 76), camera on,
+Meta API key saved, Zoom open with **GestureCue Camera** selected. Have
+a history text and a fractions text ready to paste.
 
 ## 0:00–0:30 The problem
 
@@ -24,7 +24,7 @@ artwork.
 
 Retitle one card, tweak one illustration prompt, Regenerate Changed
 (only that card refreshes), Refresh Text (free local re-composition),
-save to the History collection.
+save to the History collection, then select the lesson in the catalog.
 
 ## 1:40–2:30 Live in Zoom
 
@@ -39,4 +39,5 @@ One local pipeline: capture fans out to Vision gesture recognition and
 to the compositor (camera + cards + paint), which feeds the in-app
 monitor, the native CoreMediaIO virtual camera, and MP4 recording.
 Only approved source text ever leaves the Mac, to the Meta Model API;
-frames never do. 244 automated tests; gestures verified on camera.
+frames never do. 363 automated tests; gestures and the full
+Studio-to-Zoom flow verified on camera.

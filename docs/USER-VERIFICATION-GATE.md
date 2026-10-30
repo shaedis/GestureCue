@@ -1,4 +1,4 @@
-# User verification gate — Build 62 (branch `visual-pedagogy`)
+# User verification gate — Build 76 (branch `visual-pedagogy`)
 
 Everything below needs a human: the live API key, eyes on real cards,
 a camera, and Zoom. Work top to bottom, tick each box, and paste the
@@ -7,9 +7,9 @@ passed without doing it. Failing step: stop, paste the step ID plus
 what you saw (and any error text), and wait for a fix.
 
 Setup (once): `cp -R build/GestureCue.app /Applications/GestureCue.app`,
-open the `/Applications` copy, confirm the title says Build 62.
+open the `/Applications` copy, confirm the title says Build 76.
 
-## Part 1 — AI Studio (ST-01..12)
+## Part 1 — AI Studio (ST-01..16)
 
 Key + approval:
 
@@ -48,8 +48,34 @@ Present on video:
       the call; Next/Previous gestures advance while streaming.
 - [x] ST-11 Two-finger brush highlights text live and fades; Expand
       (E / three fingers) fills the frame for small tiles.
-- [ ] ST-12 Start a generation, press Cancel: stops cleanly, partial
+- [x] ST-12 Start a generation, press Cancel: stops cleanly, partial
       drafts editable, no stuck spinner or error sheet.
+- [x] ST-13 Two-finger brush shapes (Build 72): show any card, draw a
+      wobbly horizontal stroke with two fingers → on release it snaps
+      to a straight horizontal line; same vertically. Draw a loop →
+      it becomes a clean ellipse/circle. Draw a diagonal and a
+      scribble → both stay freehand. All shapes fade away as before
+      and never persist, undo, or leak onto other cards.
+- [x] ST-14 Brush visible over photos in Zoom (Build 73/75): show a
+      card with a busy picture (bottom card: photo sits right of the
+      text), stroke across the photo with two fingers → the line stays
+      clearly readable over the picture while it fades, in the program
+      monitor AND in the Zoom tile. Repeat on a WHITE diagram card
+      with YELLOW (the worst combo — halo separates it) and with RED
+      (stays clean, no halo needed). Over dark text both look as
+      before. Fade timing unchanged.
+- [xx] ST-15 Window stays alive while brushing (Build 74): arm
+      listening, then brush continuously with two fingers for a
+      minute+ without firing any command → the "idles out in"
+      countdown keeps resetting toward 5:00 and brushing never
+      parks itself; stop all input for 5 minutes → the window ends
+      on its own as before.
+- [ ] ST-16 Mouse brush — PARKED as future feature (Build 76, see
+      PENDING-FEATURES.md; skip until reactivated): press-drag-release
+      on the program monitor → a fading brush stroke lands exactly
+      under the cursor (crosshair over the monitor), snaps
+      straight/circle like the finger brush, and shows in the Zoom
+      tile; works even while listening is off; card switch clears it.
 
 ## Part 2 — Virtual camera (VC-01..07)
 
@@ -63,13 +89,13 @@ lands mid-gate.
       the composited feed (camera + card), not the raw webcam.
 - [x] VC-03 Next/Previous/paint gestures work while streaming; feed
       stays live throughout.
-- [ ] VC-04 Stop Camera: status back to Installed; Zoom freezes or goes
+- [x] VC-04 Stop Camera: status back to Installed; Zoom freezes or goes
       dark; app keeps running.
 - [ ] VC-05 Uninstall: extension disappears from camera lists after
       deactivation. (Re-enable afterwards to continue.)
 - [x] VC-06 Restart app: status shows Installed, not Live; Enable
       resumes streaming.
-- [ ] VC-07 Slate: extension active but app streaming off → clients see
+- [x] VC-07 Slate: extension active but app streaming off → clients see
       the "Enable the virtual camera in GestureCue" slate.
 
 ## Part 3 — Demo flows (Task 4)
@@ -79,17 +105,17 @@ above — this pass proves the whole chain in one sitting.
 
 Flow H (history, Visual Educational mode):
 
-- [ ] H1 Import a history PDF (ST-04) → H2 generate illustrated cards
+- [x] H1 Import a history PDF (ST-04) → H2 generate illustrated cards
       (ST-05) → H3 edit + approve (ST-07) → H4 save + reopen (ST-08) →
       H5 select in catalog → H6 show in live video (ST-09) → H7 finger
       highlight (ST-11) → H8 verify in Zoom via GestureCue Camera
       (ST-10) → H9 record MP4 + play back (REC-01 in
       MANUAL-TEST-PHASE-04; file lands in Movies/GestureCue).
 
-Flow F (fractions, Visual Educational mode): same 9 steps with a
+- [x] - Flow F (fractions, Visual Educational mode): same 9 steps with a
 fractions text (ST-06 math checks at step 2).
 
-Flow P (faithful mode): import a real PowerPoint → verify faithful
+- [x] - Flow P (faithful mode): import a real PowerPoint → verify faithful
 caption + verbatim splits with green fidelity lines (ST-04).
 
 ## Report back

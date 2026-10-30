@@ -1076,6 +1076,104 @@ while any regen or generation runs). 329/329 (VM/view-only, no new
 tests), staged, deep-codesign OK. Manual verify: regenerate one
 card → spinner → new art; batch → spinners follow each card.
 
+## 2026-10-30 — Checkpoint: commit 3474dc9 + tag (user request)
+
+Committed Builds 46–71 on visual-pedagogy (41 files), pushed to
+origin, tagged visual-pedagogy-build-71. Secret-scanned clean;
+.env/build/prompts stay local. Revert advice given: prefer `git
+revert`, tag is a convenience bookmark.
+
+## 2026-10-30 — Build 72: brush shape snapping (user request)
+
+Two-finger brush strokes now snap on release: straight horizontal /
+vertical drags become clean lines, closed loops become clean
+ellipses; diagonals, scribbles, and dots stay freehand. New
+BrushShapeClassifier (aspect-uniform geometry, ratio thresholds,
+no ML) resolves shapes back into stroke points, so fading and
+rendering needed no changes; pinch paint untouched. Also cleared a
+pre-existing unused-binding warning in the touched controller.
+343/343 (14 new tests: 11 classifier + 3 controller integration),
+staged, deep-codesign OK. Gate: new ST-13 covers on-camera shapes.
+
+## 2026-10-30 — Build 73: brush halo over photos (user report)
+
+User: fading two-finger brush "not recorded" over card images in Zoom,
+only over text. Lab diagnosis: compositor proven correct — stroke pixels
+land on the photo (red-excess 52 mid-fade), draw order card → paint →
+dot, zoomed image clipped to its box, and H.264 + 360p + 400 kbit/s
+Zoom-like encodes preserve the stroke over photo and text equally.
+Root cause is contrast, not a dropped draw: a thin fading line drops
+below visibility against busy photo detail in a small compressed tile
+while staying obvious over flat text background. Fix: fading brush
+strokes now paint a dark halo (black 0.55 × fade alpha, 2× line width)
+under the color line; same fade curve, committed strokes and pointer
+unchanged. Verified before/after on identical deterministic photo:
+halo tunnel darkens photo beside the stroke by 18.2 luminance vs 0.0
+without. 345/345 (2 new halo tests, scratch repro removed), staged,
+deep-codesign OK. Gate: new ST-14 covers on-camera legibility in Zoom.
+
+## 2026-10-30 — Build 74: window stays alive while brushing + mouse brush (user report + request)
+
+Two brush items. (1) FIX: brushing "worked a while then stopped
+inside the card" — only fired gestures and zoom steps refreshed the
+5-minute command window, so pure brushing let the latch expire and
+paint silently parked. Paint/brush layer changes now refresh the
+deadline (throttled to 2 s; guarded while paused so ending the
+window can't re-arm it). (2) Mouse brush: press-drag-release on the
+program monitor paints fading brush strokes under a crosshair
+cursor — explicit UI input, so it works even while paused, with
+the same fade/prune/shape-snapping as the two-finger brush (both
+can be live at once; cleared on card switch). View→paint mapping
+is pure aspect-fill math with mirror + clamp handling. 359/359
+(14 new tests: 7 controller lifecycle incl. hand coexistence +
+paused independence, 6 mapping incl. crop/mirror/clamp, 1
+pixel size), staged, deep-codesign OK. Gates: new ST-15 (window
+alive) + ST-16 (mouse brush) cover on-camera verification.
+
+## 2026-10-30 — Build 75: adaptive brush halo (user report: brush invisible on white diagram)
+
+User: brush works on text but not on white image cards (pie-chart
+screenshot). Diagnosis: yellow (luminance 209) on white (255) is
+near-invisible, and the fixed black halo either blinds mid-fade
+(yellow crosses the tunnel at ~1/3) or muddies red-on-white
+(179 → 13 luminance). Fix: per-segment adaptive halo — each short
+run samples its own background and halos only when the line-vs-bg
+gap is < 80, with polarity pushing the tunnel away from the line
+(dark above a lighter line, white below a darker one, dark always
+on near-white), lingering slightly into the fade (no ghosts, no
+mid-fade blind sweep). Red-on-white and colors on dark cards stay
+halo-clean; yellow-on-white and colors on mid-tone photos halo.
+363/363 (halo tests rewritten to 6: white-card yellow/red,
+midtone white polarity, dark-text cleanliness, fade linger),
+staged, deep-codesign OK. Gate: ST-14 now covers white diagrams.
+
+## 2026-10-30 — Build 76: mouse brush parked as future feature (user decision)
+
+Mouse brush (Build 74) unverified on-site: no crosshair appears over
+the program monitor, so drags never reach the brush view (wrong
+surface vs event-path bug undetermined — user chose to skip rather
+than debug now). Parked: on-screen promise + a11y mention removed
+(code stays inert in tree: controller API, mapping, 14 tests all
+green), ST-16 marked parked, spec filed in PENDING-FEATURES.md.
+363/363, staged, deep-codesign OK. The Build 74 window-alive fix is
+unaffected and still ships.
+
+## 2026-10-30 — Submission freeze (next_step_3, Build 76)
+
+Docs-only close-out, no code changes: README refreshed (363 tests,
+arch diagram, roadmap), new root HACKATHON-SUBMISSION.md (judge
+one-pager), DEMO-SCRIPT to Build 76 with catalog-select beat,
+RELEASE-CHECKLIST baselines fixed, HACKATHON.md extended to
+Builds 46–76 with corrected not-built list, .env added to
+.gitignore. Verification: 363/363 green, staged app deep-verified,
+diff since 3474dc9 reviewed (intended files only, no secrets/
+debris), warning fix considered then reverted (freeze discipline;
+1 minor pre-existing warning stands, reported). Manual records
+reconciled: ST-01..14 + H/F/P + VC-02/03/04/06/07 stand (no
+re-runs needed — 73–76 brush/window changes are covered by ST-14
+on 75); genuinely outstanding: ST-15, VC-01/05 (ST-16 parked).
+Commit of Builds 72–76 + tag prepared, awaiting user go.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

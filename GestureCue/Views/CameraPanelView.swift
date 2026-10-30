@@ -105,8 +105,13 @@ struct CameraPanelView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.black)
-                ProgramOutputView(layer: viewModel.programOutput.layer)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                ProgramOutputView(
+                    layer: viewModel.programOutput.layer,
+                    videoSize: camera.resolution.pixelSize,
+                    mirrored: viewModel.outputMirrored,
+                    onBrush: { viewModel.mouseBrush($0) }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .frame(minHeight: 140)
             .accessibilityElement(children: .ignore)
