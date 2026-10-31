@@ -74,6 +74,18 @@ final class AppViewModel: ObservableObject {
     @Published var paintMode = false {
         didSet { gestureDetector.setPaintMode(paintMode) }
     }
+    @Published var zoomEnabled = true {
+        didSet {
+            UserDefaults.standard.set(zoomEnabled, forKey: Self.zoomEnabledKey)
+            gestureDetector.setZoomEnabled(zoomEnabled)
+        }
+    }
+    @Published var brushEnabled = true {
+        didSet {
+            UserDefaults.standard.set(brushEnabled, forKey: Self.brushEnabledKey)
+            paintController.setBrushEnabled(brushEnabled)
+        }
+    }
     @Published private(set) var painting = false
     @Published private(set) var isOutputRunning = false
     @Published private(set) var outputMirrored = false
@@ -104,6 +116,8 @@ final class AppViewModel: ObservableObject {
     private static let highlightColorKey = "GestureCue.highlightColor"
     private static let mirrorModeKey = "GestureCue.outputMirrorMode"
     private static let detectionPausedKey = "GestureCue.detectionPaused"
+    private static let zoomEnabledKey = "GestureCue.zoomEnabled"
+    private static let brushEnabledKey = "GestureCue.brushEnabled"
     private var cancellations = Set<AnyCancellable>()
     private var commandWindow = CommandWindow()
     private var lastPaintActivity = Date.distantPast
@@ -227,6 +241,12 @@ final class AppViewModel: ObservableObject {
             compositor.updatePaint(layer)
             Task { [weak self] in await self?.notePaintActivity() }
         }
+        // Pinch zoom defaults on; a stored off persists across launches.
+        zoomEnabled = UserDefaults.standard.object(forKey: Self.zoomEnabledKey) as? Bool ?? true
+        gestureDetector.setZoomEnabled(zoomEnabled)
+        // Two-finger brush defaults on; a stored off persists across launches.
+        brushEnabled = UserDefaults.standard.object(forKey: Self.brushEnabledKey) as? Bool ?? true
+        paintController.setBrushEnabled(brushEnabled)
     }
 
     // MARK: - Actions from mouse/keyboard

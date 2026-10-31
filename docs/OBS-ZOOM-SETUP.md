@@ -16,7 +16,7 @@ OBS cannot capture windows without it; the capture stays black otherwise.
 ## 2. Start GestureCue output
 
 1. Open GestureCue (`make open`), press **Start Camera**.
-2. In the Camera panel, under **Output to OBS**, press **Start Output**.
+2. In the Camera panel, under **Fullscreen Window**, press **Open Window**.
 3. A borderless **GestureCue Output** window appears showing video only —
    no buttons, no text, no window chrome. This is the capture source.
 4. Pick **Resolution** (720p default; 1080p for sharper cards) and
@@ -53,15 +53,15 @@ gestures (or the mouse/keyboard equivalents).
 
 If the picture in Zoom freezes or misbehaves, restart in this order:
 
-1. In GestureCue: press **Stop Output**, then **Start Output** again.
+1. In GestureCue: press **Close Window**, then **Open Window** again.
 2. In OBS: press **Stop Virtual Camera**, then **Start Virtual Camera**.
 3. If still stuck: quit GestureCue (⌘Q), run `make open`, Start Camera,
-   Start Output — then re-select OBS Virtual Camera in Zoom.
+   Open Window — then re-select OBS Virtual Camera in Zoom.
 
 ## Restarting GestureCue
 
 Quitting GestureCue freezes the Zoom picture (OBS keeps sending its last
-frame). To resume: Start Camera → Start Output in GestureCue; if OBS
+frame). To resume: Start Camera → Open Window in GestureCue; if OBS
 still shows a stale frame, delete the Screen Capture source and add it
 fresh — the old source stays bound to the dead pre-restart window. Then
 Stop/Start Virtual Camera if needed.
@@ -69,7 +69,7 @@ Stop/Start Virtual Camera if needed.
 ## Troubleshooting
 
 - Black capture in OBS: Screen Recording permission (step 1) is missing.
-- "GestureCue Output" not in the window list: press Start Output first.
+- "GestureCue Output" not in the window list: press Open Window first.
 - Choppy video: use 720p; close heavy apps; keep OBS canvas at 1280×720.
 - Backwards video: set Mirroring to Original (or Mirrored) explicitly.
 - Card edges cut off: in OBS check canvas 1280×720 and source Transform
@@ -80,5 +80,5 @@ Stop/Start Virtual Camera if needed.
 - Card text looks backwards in Zoom: that is Zoom's self-view mirror
   ("Mirror my video", on by default) — attendees see it correctly.
   Uncheck it in Zoom Settings → Video to preview the true picture.
-- Output window closed accidentally: press Start Output again (Stop, then
+- Output window closed accidentally: press Open Window again (Close, then
   Start if the button already shows Stop).

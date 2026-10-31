@@ -1,10 +1,10 @@
 import AppKit
 import AVFoundation
 
-/// Chromeless OBS capture window: borderless, video-only, titled for OBS's
-/// window list. Draggable by its background (there is no title bar to grab);
-/// shown and hidden exclusively through Start/Stop Output so the output
-/// branch and the window can never desync.
+/// Chromeless fullscreen capture window: borderless, video-only, titled
+/// for OBS's window list. Draggable by its background (there is no title
+/// bar to grab); shown and hidden exclusively through Open/Close Window
+/// so the output branch and the window can never desync.
 @MainActor
 final class OutputWindowController {
     /// OBS window-capture lists this title; keep it stable.

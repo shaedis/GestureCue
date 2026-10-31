@@ -45,6 +45,8 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
     private var zoomGate = ZoomHandGate()
     /// Signing mode: hands are ignored until a command window opens.
     private var detectionPaused = true
+    /// Pinch-to-zoom tracking (user toggle, persisted, default on).
+    private var zoomEnabled = true
     /// Still-hold clutch (2 s): a palm arms listening, a fist ends it.
     private var clutchMachine = GestureStateMachine(config: .init(holdDuration: 2.0))
     private var releaseGate = ReleaseGate()
@@ -90,6 +92,17 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
         paint.setMode(enabled ? .paint : .off)
     }
 
+    /// Enables or disables pinch-to-zoom tracking. While disabled the
+    /// zoom hand shape feeds the command machine like any other pose
+    /// instead of zooming or suppressing. Resets zoom state on switch.
+    func setZoomEnabled(_ enabled: Bool) {
+        lock.withLock {
+            zoomEnabled = enabled
+            pinchZoom.reset()
+            zoomGate.reset()
+        }
+    }
+
     /// Sets the command hold-to-fire duration (user-configurable trigger
     /// timing). Resets stability so a mid-hold change can't half-fire. The
     /// 2 s arming clutch is a fixed safety latch and stays untouched.
@@ -117,6 +130,7 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
     func consume(_ sampleBuffer: CMSampleBuffer) {
         let pose = detector.detect(in: sampleBuffer)
         let paused = lock.withLock { detectionPaused }
+        let zoomOn = lock.withLock { zoomEnabled }
         // Paused hands are invisible to paint: the stroke commits and the
         // pointer hides, exactly as if the hand had left the frame.
         let painting = paint.handle(paused ? nil : pose)
@@ -143,8 +157,9 @@ final class HandGestureDetector: VideoFrameConsumer, @unchecked Sendable {
                 releaseGate.suppress(.openPalm)
                 didArm = true
             }
-        } else if paint.isPaintMode || pose == nil {
-            // Paint owns the pinch; a missing hand ends the presentation.
+        } else if paint.isPaintMode || pose == nil || !zoomOn {
+            // Paint owns the pinch; a missing hand ends the presentation;
+            // a disabled zoom toggle parks tracking entirely.
             zoomGate.reset()
             zoomDecision = pinchZoom.update(distance: nil, at: now)
             engaged = false

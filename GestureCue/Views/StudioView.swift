@@ -57,22 +57,18 @@ struct StudioView: View {
                     .accessibilityLabel("Start new source material")
                 Button("Import File…") { viewModel.importFileViaPanel() }
                 Button("Use Pasted Text") { viewModel.usePastedText() }
-                Menu("Use Existing Deck…") {
+                Menu("AI Decks…") {
                     if viewModel.studioDecks.isEmpty {
                         Text("No AI-generated decks yet")
                     }
                     ForEach(viewModel.studioDecks) { deck in
-                        Button(deck.name) { viewModel.useDeck(deck) }
+                        Menu(deck.name) {
+                            Button("Use Text as Source") { viewModel.useDeck(deck) }
+                            Button("Edit Drafts & Art") { viewModel.editDeck(deck) }
+                        }
                     }
                 }
-                Menu("Edit Existing Deck…") {
-                    if viewModel.studioDecks.isEmpty {
-                        Text("No AI-generated decks yet")
-                    }
-                    ForEach(viewModel.studioDecks) { deck in
-                        Button(deck.name) { viewModel.editDeck(deck) }
-                    }
-                }
+                .accessibilityLabel("AI decks: reuse a deck as source text or edit its drafts")
                 Spacer()
                 Text("\(viewModel.sourceText.count) characters")
                     .font(.caption)
@@ -181,7 +177,7 @@ struct StudioView: View {
                 TextField("Language", text: $viewModel.settings.language)
                     .frame(maxWidth: 200)
                 Spacer()
-                Stepper("Cards: \(viewModel.settings.cardCount)", value: $viewModel.settings.cardCount, in: 3...10)
+                Stepper("Cards: \(viewModel.settings.cardCount)", value: $viewModel.settings.cardCount, in: 3...30)
             }
             TextField("Illustration style", text: $viewModel.settings.illustrationStyle)
                 .accessibilityLabel("Illustration style")

@@ -1174,6 +1174,63 @@ re-runs needed — 73–76 brush/window changes are covered by ST-14
 on 75); genuinely outstanding: ST-15, VC-01/05 (ST-16 parked).
 Commit of Builds 72–76 + tag prepared, awaiting user go.
 
+## 2026-10-30 — Build 77: app icon (user request)
+
+First custom icon (app previously had none): white palm over a blue
+presentation card with a yellow play triangle, navy full-bleed. New
+Assets.xcassets/AppIcon.appiconset (10 sizes, 16–1024) registered in
+the .xcodeproj (build file + file ref + group child + app Resources
+entry + APPICON_NAME in Debug/Release); verified AppIcon.icns in the
+staged bundle and visually at 128px. 363/363, staged,
+deep-codesign OK. Uncommitted.
+
+## 2026-10-30 — Build 78: card cap 10 → 30 (user request)
+
+The 10-card generation cap was an arbitrary initial limit. Raised to
+30 in the Studio stepper, the request clamp, and the clamp test.
+363/363, staged, deep-codesign OK. Uncommitted.
+
+## 2026-10-30 — Build 79: pinch-zoom on/off toggle (user request)
+
+Gesture Actions had no zoom control: pinch-spread tracking ran always
+with no way to disable it. New persisted "Pinch to zoom pictures"
+toggle (default on): off parks the tracker and gate, and the zoom
+hand shape feeds commands like any other pose instead of zooming or
+suppressing. Explicit mappings to zoom In/Out and the +/− keys always
+work. 363/363 (detector wiring follows the manually-verified
+setPaintMode pattern), staged, deep-codesign OK. Uncommitted.
+Verify: toggle off → spread fingers → no zoom; toggle on → zooms.
+
+## 2026-10-30 — Build 80: two-finger brush on/off toggle (user request)
+
+Gesture Actions had no brush switch (only Paint Mode, elsewhere).
+New persisted "Two-finger brush" toggle (default on): off disengages
+the tracker, ends the live stroke (fades normally), and blocks new
+hand strokes; the pose then feeds commands instead of suppressing.
+Mouse brush stays available as explicit UI input. 365/365 (2 new
+controller tests: disable-ends-blocks, re-enable resumes), staged,
+deep-codesign OK. Uncommitted.
+Verify: toggle off → two fingers paint nothing; toggle on → brush back.
+
+## 2026-10-31 — Build 81: merged duplicate deck menus (user report)
+
+Studio toolbar showed two identical deck menus ("Use Existing Deck…"
+vs "Edit Existing Deck…", same list, different actions). Merged into
+one "AI Decks…" menu with a per-deck submenu: "Use Text as Source"
+vs "Edit Drafts & Art" (same view-model calls, no behavior change).
+365/365, staged, deep-codesign OK. Uncommitted.
+
+## 2026-10-31 — Build 82: output labels renamed (user request)
+
+"Output"/"Output to OBS" wording was unclear, and literal "Virtual
+Camera" would collide with the existing native-camera section. New
+labels: Program Output → Program Monitor, Output to OBS →
+Fullscreen Window, Start/Stop Output → Open/Close Window, status
+Window Open/Closed (a11y + captions match). Window title
+"GestureCue Output" kept (OBS picker + docs depend on it);
+identifiers untouched. Docs updated (OBS-ZOOM-SETUP, README).
+365/365, staged, deep-codesign OK. Uncommitted.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing

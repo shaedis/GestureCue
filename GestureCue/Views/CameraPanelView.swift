@@ -96,10 +96,10 @@ struct CameraPanelView: View {
 
     private var programOutput: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Program Output")
+            Text("Program Monitor")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
-            Text("The composited feed: camera plus card overlay. Start Output below to open the fullscreen capture window for OBS and Zoom.")
+            Text("The composited feed: camera plus card overlay. Use Open Window below for the fullscreen capture window.")
                 .font(.caption)
                 .foregroundColor(.secondary)
             ZStack {
@@ -115,7 +115,7 @@ struct CameraPanelView: View {
             }
             .frame(minHeight: 140)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Composited program output preview")
+            .accessibilityLabel("Composited program monitor preview")
             Picker("Card position", selection: $viewModel.cardPosition) {
                 ForEach(CardOverlayPosition.allCases, id: \.self) { position in
                     Text(position.displayName).tag(position)
@@ -199,19 +199,19 @@ struct CameraPanelView: View {
 
     private var outputControls: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Output to OBS")
+            Text("Fullscreen Window")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
-            Text("Clean video-only window for OBS Window Capture → Virtual Camera → Zoom. Setup: docs/OBS-ZOOM-SETUP.md.")
+            Text("Clean video-only window for screen capture into Zoom (e.g. OBS Window Capture). Prefer Virtual Camera above when available. Setup: docs/OBS-ZOOM-SETUP.md.")
                 .font(.caption)
                 .foregroundColor(.secondary)
             HStack {
                 if viewModel.isOutputRunning {
-                    Button("Stop Output") { viewModel.stopOutput() }
+                    Button("Close Window") { viewModel.stopOutput() }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                 } else {
-                    Button("Start Output") { viewModel.startOutput() }
+                    Button("Open Window") { viewModel.startOutput() }
                         .buttonStyle(.borderedProminent)
                         .disabled(!camera.isRunning)
                 }
@@ -220,7 +220,7 @@ struct CameraPanelView: View {
             Text(outputStatusLine)
                 .font(.callout)
                 .foregroundColor(.secondary)
-                .accessibilityLabel("Output status: \(outputStatusLine)")
+                .accessibilityLabel("Window status: \(outputStatusLine)")
             Picker("Resolution", selection: $camera.resolution) {
                 ForEach(CaptureResolution.allCases, id: \.self) { resolution in
                     Text(resolution.displayName).tag(resolution)
@@ -292,9 +292,9 @@ struct CameraPanelView: View {
     }
 
     private var outputStatusLine: String {
-        let state = viewModel.isOutputRunning ? "Running" : "Stopped"
+        let state = viewModel.isOutputRunning ? "Open" : "Closed"
         let mirror = viewModel.outputMirrored ? "Mirrored" : "Original"
-        return "Output \(state) · \(camera.resolution.displayName) · \(mirror)"
+        return "Window \(state) · \(camera.resolution.displayName) · \(mirror)"
     }
 
     private var statusLine: String {

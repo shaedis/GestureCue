@@ -49,6 +49,7 @@ final class FingerPaintController: @unchecked Sendable {
     private var pinching = false
     private var smoothed: SIMD2<Float>?
     private var brush = BrushStrokeTracker()
+    private var brushEnabled = true
     private var brushStrokes: [BrushStroke] = []
     private var mouseBrushStrokes: [BrushStroke] = []
     private var lastPushed = PaintLayer()
@@ -79,6 +80,21 @@ final class FingerPaintController: @unchecked Sendable {
     func setColor(_ color: HighlightColor) {
         lock.withLock {
             self.color = color
+            pushLocked()
+        }
+    }
+
+    /// Enables or disables the two-finger hand brush (user toggle,
+    /// persisted, default on). Disabling disengages the tracker and
+    /// ends the live stroke (it fades normally); no new hand strokes
+    /// start until re-enabled. The mouse brush is explicit UI input
+    /// and stays available.
+    func setBrushEnabled(_ enabled: Bool) {
+        lock.withLock {
+            brushEnabled = enabled
+            if !enabled {
+                brush.reset()
+            }
             pushLocked()
         }
     }
@@ -208,7 +224,7 @@ final class FingerPaintController: @unchecked Sendable {
         defer { lock.unlock() }
         let tip = Self.brushTip(of: pose, minJointConfidence: config.minJointConfidence)
         let now = Date()
-        if let point = brush.update(fingers: fingers, tip: tip, smoothing: config.smoothing) {
+        if brushEnabled, let point = brush.update(fingers: fingers, tip: tip, smoothing: config.smoothing) {
             let cg = CGPoint(x: CGFloat(point.x), y: CGFloat(point.y))
             if let last = brushStrokes.indices.last, brushStrokes[last].endedAt == nil {
                 if let prev = brushStrokes[last].stroke.points.last {
