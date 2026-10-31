@@ -447,7 +447,7 @@ final class MetaModelClientTests: XCTestCase {
         settings.audience = .custom
         settings.audienceCustom = "Evening class"
         settings.cardCount = 99
-        XCTAssertEqual(settings.clampedCardCount, 10)
+        XCTAssertEqual(settings.clampedCardCount, 30)
         let data = try JSONEncoder().encode(settings)
         XCTAssertEqual(try JSONDecoder().decode(GenerationSettings.self, from: data), settings)
     }

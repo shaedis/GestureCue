@@ -90,7 +90,7 @@ command window, so normal signing never triggers actions.
   main actor. Protocols + DI for classification/routing/generation for
   testability.
 
-## 3. Feature inventory (as claimed working; the oldest items are user-verified on camera, the newest are pending the ST gate — see §5)
+## 3. Feature inventory (as claimed working, user-verified on camera — see §5)
 
 - 8 gestures: palm, fist, thumbs-up, thumb-left/right, index / two- /
   three-finger. Defaults (mapping v5): palm→show, thumbs-up→hide,
@@ -250,9 +250,10 @@ command window, so normal signing never triggers actions.
   fidelity/provenance, PPTX extraction (embedded fixture), PPTX/PDF
   image extraction (hand-built fixtures, pixel-exact asserts), PDF
   kind routing (mocked transport; no network in tests).
-- Manual (user, on camera): gestures fire, listening latch, paint,
-  brush appearance + fade, Zoom + QuickTime show full card at both
-  resolutions, enable/disable/uninstall flows.
+- Manual (user, on camera): gestures fire, listening latch (incl.
+  staying alive while brushing), paint, brush shapes + fade +
+  legibility over photos/diagrams, Zoom + QuickTime show full card
+  at both resolutions, enable/disable/uninstall flows.
 - AI Studio live E2E (real API, Build 50 code, temp probe since
   removed): history lesson (5 cards, 4 generated illustrations +
   timeline; all dates/facts faithful to source, chronology correct)
@@ -266,16 +267,16 @@ command window, so normal signing never triggers actions.
   cards verbatim from slide-style source, empty art prompts, null
   diagrams. Full in-app faithful run (import real PP → generate →
   save → present) NOT yet run.
-- Studio manual gate (ST-01..16: key round-trip, import, in-app
-  generate/review/save, present over Zoom, gestures, brush shapes,
-  brush legibility over photos + white diagrams,
-  window-alive-while-brushing, cancel; ST-16 mouse brush parked):
-  NOT yet run — pending user with Build 76 Studio
-  (ST-01/02 smoke-passed on 51 before the later fixes).
-  fix-issues.md items (#1–5: single window, New+ask-to-save,
-  AI-only menus, stale-draft clearing, main-close behavior) also
-  pending user verification on Build 57.
-- Formal VC-01..07 manual checklist: NOT yet run end-to-end.
+- Studio manual gate: ALL RUN — user reports ST-01..15 pass on the
+  Build 76 Studio (key round-trip, import, in-app generate/review/
+  save, present over Zoom, gestures, brush shapes, brush legibility
+  over photos + white diagrams, window-alive-while-brushing,
+  cancel), plus flows H/F/P end to end. ST-16 mouse brush is parked
+  with the feature (not runnable).
+  fix-issues.md items (single window, New+ask-to-save, AI-only
+  menus, stale-draft clearing, main-close behavior) user-verified.
+- Formal VC-01..07 manual checklist: ALL RUN — user reports pass
+  (clean-state enable through uninstall).
 - Hardware/network-bound paths (real CMIO sink, Center Stage switch,
   live plan/image calls, Keychain roundtrip) have no unit tests by
   nature; covered by manual verification + one-off live probes only.

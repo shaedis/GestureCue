@@ -172,6 +172,14 @@ struct GestureControlPanelView: View {
                     }
                 }
             }
+            Toggle("Pinch to zoom pictures", isOn: $viewModel.zoomEnabled)
+            Text("Spreading or pinching thumb + index (thumb raised) zooms the card picture. Turn off to disable; + / − keys always work.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Toggle("Two-finger brush", isOn: $viewModel.brushEnabled)
+            Text("Index + middle finger paints fading highlight strokes. Turn off to disable.")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
     }
 

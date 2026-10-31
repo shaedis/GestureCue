@@ -555,6 +555,33 @@ final class BrushStrokeTests: XCTestCase {
         let points = try XCTUnwrap(box.layers.last?.brushStrokes.first?.stroke.points)
         XCTAssertGreaterThan(points.count, 2, "diagonals keep raw points")
     }
+
+    func testDisablingEndsLiveStrokeAndBlocksNew() throws {
+        let (paint, box) = brushedController()
+        let pose = brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5))
+        XCTAssertTrue(paint.updateBrush(pose: pose, fingers: brushFingers))
+        XCTAssertTrue(paint.updateBrush(pose: pose, fingers: brushFingers))
+        paint.setBrushEnabled(false)
+        XCTAssertFalse(paint.updateBrush(pose: pose, fingers: brushFingers))
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertNotNil(strokes.first?.endedAt, "live stroke ends and fades")
+        XCTAssertFalse(paint.updateBrush(pose: pose, fingers: brushFingers))
+        XCTAssertEqual(try XCTUnwrap(box.layers.last?.brushStrokes).count, 1, "no new strokes while disabled")
+    }
+
+    func testReEnablingResumesBrushing() throws {
+        let (paint, box) = brushedController()
+        let pose = brushPose(indexTip: SIMD2(0.5, 0.5), middleTip: SIMD2(0.54, 0.5))
+        paint.setBrushEnabled(false)
+        XCTAssertFalse(paint.updateBrush(pose: pose, fingers: brushFingers))
+        XCTAssertTrue(box.layers.allSatisfy { $0.brushStrokes.isEmpty })
+        paint.setBrushEnabled(true)
+        XCTAssertTrue(paint.updateBrush(pose: pose, fingers: brushFingers))
+        let strokes = try XCTUnwrap(box.layers.last?.brushStrokes)
+        XCTAssertEqual(strokes.count, 1)
+        XCTAssertNil(strokes.first?.endedAt, "new stroke is live")
+    }
 }
 
 final class MouseBrushTests: XCTestCase {

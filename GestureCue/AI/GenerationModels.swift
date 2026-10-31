@@ -253,8 +253,8 @@ struct GenerationSettings: Codable, Sendable, Equatable {
     var illustrationStyle: String = "Warm flat vector illustration, consistent characters and palette"
     var textAmount: AITextAmount = .balanced
 
-    /// Clamped card count for the request (3...10).
-    var clampedCardCount: Int { min(max(cardCount, 3), 10) }
+    /// Clamped card count for the request (3...30).
+    var clampedCardCount: Int { min(max(cardCount, 3), 30) }
 
     var audienceDescription: String {
         audience == .custom && !audienceCustom.isEmpty ? audienceCustom : audience.promptHint

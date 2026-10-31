@@ -1,13 +1,17 @@
 # GestureCue
 
-A native macOS app that lets a presenter control large, readable visual
-presentation cards with hand gestures from the Mac's webcam — no keyboard or
-mouse needed. Built primarily for Deaf and hard-of-hearing audiences, so they
-can split attention between the interpreter, captions, slides, and speaker
-without missing cues.
+A native macOS app that puts large, readable visual presentation cards
+*inside* the presenter's own webcam feed, controlled by hand gestures —
+no keyboard or mouse needed. Built primarily for Deaf and hard-of-hearing
+audiences: instead of splitting attention between interpreter, captions,
+slides, and speaker, viewers get the signer and the content in one frame.
+An AI Visual Education Studio (Meta Muse Spark + Muse Image) turns difficult
+source texts into illustrated lesson decks that present the same way.
 
 See [SPEC.md](SPEC.md) for scope, [AGENTS.md](AGENTS.md) for project rules,
-and [docs/](docs/) for manual test checklists and the OBS/Zoom setup guide.
+[HACKATHON-SUBMISSION.md](HACKATHON-SUBMISSION.md) for the one-page
+submission summary, and [docs/](docs/) for manual test checklists and the
+OBS/Zoom setup guide.
 
 ## Requirements
 
@@ -29,6 +33,23 @@ your Mac without a paid developer team. The `virtual-camera` and
 `visual-pedagogy` branches sign with team `X8YHS47G23` instead, because the
 camera extension requires a provisioning profile — `make` needs an
 unsandboxed shell for portal access.
+
+## Install
+
+1. Build and stage: `make app` → `build/GestureCue.app`.
+2. Copy it to `/Applications` (required for the virtual-camera system
+   extension): `cp -R build/GestureCue.app /Applications/GestureCue.app`
+   (or `make reinstall`, which restages + replaces + reopens).
+3. Open the `/Applications` copy and confirm the window title shows the
+   expected build number. If macOS blocks the first launch (Gatekeeper),
+   right-click → Open once to approve it.
+4. Press **Start Camera**, grant camera access when asked, and pick a deck
+   in the catalog. For Zoom/Teams: press **Enable Camera** once, approve
+   the system extension in System Settings if asked, then select
+   **GestureCue Camera** in Zoom (full steps: Virtual camera below +
+   [docs/VIRTUAL-CAMERA-SETUP.md](docs/VIRTUAL-CAMERA-SETUP.md)).
+5. For the AI Studio: paste a Meta API key into the Studio's key field
+   (stored in the Keychain) — see AI Visual Education Studio below.
 
 ## Camera permission
 
@@ -73,8 +94,8 @@ Equivalent mouse and keyboard controls (always available):
 | Listen for commands | L |
 | Record | R |
 
-The **Program Output** monitor in the Camera panel shows the composited feed
-(camera plus card overlay). **Start Output** opens it fullscreen for OBS
+The **Program Monitor** in the Camera panel shows the composited feed
+(camera plus card overlay). **Open Window** opens it fullscreen for OBS
 Window Capture → Virtual Camera → Zoom/Teams (see
 [docs/OBS-ZOOM-SETUP.md](docs/OBS-ZOOM-SETUP.md)); **Record** saves the same
 feed as a video-only MP4 to Movies ▸ GestureCue.
@@ -85,7 +106,11 @@ pages or PowerPoint slides as picture cards). Use the Card position control
 across restarts. **Paint color** drives Finger Paint: enable Paint Mode, then
 pinch thumb + index and drag to paint on the card (Undo/Redo/Clear included).
 On a picture card, spread or pinch thumb + index (with the thumb raised) to
-zoom the picture from the camera.
+zoom the picture from the camera. Anytime while listening, a **two-finger
+brush** (index + middle) paints freehand strokes that fade after ~1.5 s —
+straight drags snap to clean lines, loops to ellipses, and an adaptive halo
+keeps strokes readable over photos and white diagrams. Brushing counts as
+activity, so the 5-minute command window never expires mid-stroke.
 
 ## Virtual camera
 
@@ -200,10 +225,33 @@ Privacy: only your approved source text and illustration prompts leave the
 Mac, to the Meta Model API. Webcam frames are never transmitted. See the
 approval gate in `GestureCue/AI/StudioViewModel.swift`.
 
+Integration notes: the client speaks the OpenAI-compatible `v1` endpoints
+(`chat/completions` for `muse-spark-1.3` plans, images for `muse-image-1.0`
+art) with a strict JSON Schema the app enforces on every plan (decoder
+validation, one retry on 429/5xx, per-status errors). Costs stay bounded:
+diagrams and text refreshes render locally for free, faithful imports make
+no image calls at all, and per-card regeneration refreshes only what you
+edited.
+
 Manual checklist (key round-trip, import, generate, review, save, present
 over Zoom): [docs/MANUAL-TEST-STUDIO.md](docs/MANUAL-TEST-STUDIO.md).
 The consolidated human gate (ST + VC steps with tick boxes) is
 [docs/USER-VERIFICATION-GATE.md](docs/USER-VERIFICATION-GATE.md).
+
+## What was built
+
+- **Foundation (pre-hackathon, `main`):** 8-gesture recognition with
+  stillness-gated holds, the signing-safe command latch, finger paint,
+  fading brush, presentation catalog with PDF/PowerPoint import, OBS
+  output window, MP4 recording, and the native CoreMediaIO virtual
+  camera.
+- **Hackathon (Builds 46–76, `visual-pedagogy`, merged):** the AI Visual
+  Education Studio end to end (Meta Muse Spark planning + Muse Image
+  art + local diagrams, two generation modes, deck round-trip,
+  original-image reattachment, adult prose, collections), Video + Card
+  placement, brush shape-snapping, the adaptive legibility halo, and
+  the activity-aware command window. Full build-by-build record:
+  [docs/HACKATHON.md](docs/HACKATHON.md).
 
 ## Architecture
 
