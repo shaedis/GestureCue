@@ -51,4 +51,4 @@ Never mark a step passed without doing it.
 - ST-12 Cancel mid-generation (close or Cancel): progress stops, partial
   drafts stay editable, and no stuck spinner or error sheet remains.
 
-Record results (pass/fail + build + date) in `PROGRESS.md`.
+Record results (pass/fail + build + date) with the release.

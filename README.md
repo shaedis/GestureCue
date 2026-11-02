@@ -9,9 +9,7 @@ An AI Visual Education Studio (Meta Muse Spark + Muse Image) turns difficult
 source texts into illustrated lesson decks that present the same way.
 
 See [SPEC.md](SPEC.md) for scope, [AGENTS.md](AGENTS.md) for project rules,
-[HACKATHON-SUBMISSION.md](HACKATHON-SUBMISSION.md) for the one-page
-submission summary, and [docs/](docs/) for manual test checklists and the
-OBS/Zoom setup guide.
+and [docs/](docs/) for setup guides and manual test checklists.
 
 ## Requirements
 
@@ -250,8 +248,7 @@ The consolidated human gate (ST + VC steps with tick boxes) is
   art + local diagrams, two generation modes, deck round-trip,
   original-image reattachment, adult prose, collections), Video + Card
   placement, brush shape-snapping, the adaptive legibility halo, and
-  the activity-aware command window. Full build-by-build record:
-  [docs/HACKATHON.md](docs/HACKATHON.md).
+  the activity-aware command window.
 
 ## Architecture
 

@@ -70,8 +70,8 @@ Present on video:
       countdown keeps resetting toward 5:00 and brushing never
       parks itself; stop all input for 5 minutes → the window ends
       on its own as before.
-- [ ] ST-16 Mouse brush — PARKED as future feature (Build 76, see
-      PENDING-FEATURES.md; skip until reactivated): press-drag-release
+- [ ] ST-16 Mouse brush — PARKED as future feature (Build 76;
+      skip until reactivated): press-drag-release
       on the program monitor → a fading brush stroke lands exactly
       under the cursor (crosshair over the monitor), snaps
       straight/circle like the finger brush, and shows in the Zoom
@@ -125,5 +125,4 @@ diagram exact, band clear of labels`). On any FAIL add: what you
 expected, what you saw, and any on-screen error text. Screenshot the
 Zoom view for ST-10 if you can.
 
-After all green: commit + push + tag on your go, then the merge
-decision (details in PROGRESS.md Build 51 entry).
+After all green: commit + push + tag on your go.
