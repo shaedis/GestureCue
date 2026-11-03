@@ -1231,6 +1231,19 @@ Window Open/Closed (a11y + captions match). Window title
 identifiers untouched. Docs updated (OBS-ZOOM-SETUP, README).
 365/365, staged, deep-codesign OK. Uncommitted.
 
+## 2026-10-31 — Session handoff (Build 82 published to main)
+
+Main @ d9308ad (tags main-build-82 + visual-pedagogy-build-82): product
+merged (c6cc73a), AGENTS.md rewritten, internal docs purged (only
+setup guides + QA checklists remain). This branch keeps the full dev
+record (PROGRESS, review pack, gate, pending specs). User reports
+full gate all-run; file boxes ST-15/VC-01/05 still unticked (theirs
+to tick). Suite 365/365, staged app Build 82 deep-verified.
+Resume: merge main into this branch first (keep main's doc
+deletions on conflict), read AGENTS.md + this tail, verify with
+make test (unsandboxed) + make app + codesign --verify --deep.
+Pending: user publishes to GitHub; parked: mouse brush, split-view.
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing
