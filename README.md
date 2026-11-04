@@ -63,8 +63,11 @@ present inside the composited video like any other cards.
 - ✏️ **Edit anything** — retitle, relabel, rewrite prompts per card.
 - ♻️ **Pay only for changes** — text refreshes re-compose free;
   regeneration touches only edited cards.
-- 📚 **Faithful mode** — PDF/PowerPoint imports split your pages
-  verbatim: no rewritten text, your original images reattached, no
+- 🎨 **Visual Educational mode** — the default: Muse Spark storyboards
+  your source into new explanations across up-to-30 video-ready cards,
+  Muse Image illustrates each card, exact diagrams render free on-device.
+- 📚 **Faithful Presentation mode** — PDF/PowerPoint imports split your
+  pages verbatim: no rewritten text, your original images reattached, no
   new art, no image API cost.
 - 🗂 **Catalog collections** — model-suggested, approval-gated; decks
   round-trip back into the Studio for more edits.
