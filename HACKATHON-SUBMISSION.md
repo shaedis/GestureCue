@@ -1,4 +1,4 @@
-# GestureCue — Hackathon Submission (Build 76, branch `visual-pedagogy`)
+# GestureCue — Hackathon Submission (Build 82, merged to `main`)
 
 ## The problem
 
@@ -43,22 +43,21 @@ sources sent to the Meta API. No microphone, no analytics, no tracking.
 
 ## Verification snapshot
 
-- **363/363 automated tests green** (gestures, paint/brush, compositing,
+- **365/365 automated tests green** (gestures, paint/brush, compositing,
   virtual camera, AI client/import/generation, deck round-trip).
 - **User-verified on camera + Zoom:** gestures, listening latch, paint,
   brush shapes and legibility over photos/diagrams, Zoom feed, MP4
   recording, full Studio→catalog→Zoom flows for history, fractions,
-  and faithful PowerPoint import (ST-01..14, flows H/F/P).
-- **Still to run:** ST-15 (window stays alive while brushing), VC-01/05
-  (clean-state enable, uninstall). ST-16 mouse brush is parked as a
-  future feature.
+  and faithful PowerPoint import (ST-01..15, VC-01..07, flows H/F/P).
+  ST-16 mouse brush is parked as a future feature.
+- **Manual gate fully run** — no outstanding checks.
 - Adversarial review brief: `docs/EXTERNAL-REVIEW.md`. Manual evidence:
   `docs/USER-VERIFICATION-GATE.md`. Three-minute demo: `docs/DEMO-SCRIPT.md`.
 
 ## Run it
 
 ```sh
-make test   # 363 XCTest tests (unsandboxed shell)
+make test   # 365 XCTest tests (unsandboxed shell)
 make app    # stage build/GestureCue.app
 ```
 
@@ -68,8 +67,10 @@ Pick **GestureCue Camera** in Zoom. Details: `README.md`.
 
 ## Built during the hackathon
 
-Everything on branch `visual-pedagogy` past `main` at `main-build-45`:
+Everything past `main` at `main-build-45` (now merged to `main`):
 the AI Studio end to end (Builds 46–71), brush shape-snapping (72),
 adaptive brush legibility halo (73/75), activity-aware command window
-(74). See `docs/HACKATHON.md` for the build-by-build record. Foundation
-(gestures, latch, paint, virtual camera) predates the hackathon on `main`.
+(74), app icon, card cap 30, brush/zoom toggles, menu + label polish
+(77–82). See `docs/HACKATHON.md` for the build-by-build record.
+Foundation (gestures, latch, paint, virtual camera) predates the
+hackathon on `main`.

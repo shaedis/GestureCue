@@ -51,7 +51,7 @@ OBS/Zoom setup guide.
 
 ```sh
 make build   # compile
-make test    # 363 XCTest tests (run in an unsandboxed shell)
+make test    # 365 XCTest tests (run in an unsandboxed shell)
 make app     # stage build/GestureCue.app
 make open    # restart + open the staged app
 ```
@@ -227,7 +227,7 @@ Always test with the newest staged build (window title; currently Build
 
 ## ✨ AI Visual Education Studio
 
-On branch `visual-pedagogy`, the Studio window turns difficult source texts
+The Studio window turns difficult source texts
 (history, fractions, science, Bible passages) into illustrated lesson decks
 using the Meta Model API (`https://api.meta.ai/v1`): **Muse Spark**
 storyboard planning plus **Muse Image** illustrations, with deterministic
@@ -313,7 +313,7 @@ no camera required.
 
 ## 🧪 Testing
 
-363 XCTest unit tests in `GestureCueTests/` cover classification, confidence
+365 XCTest unit tests in `GestureCueTests/` cover classification, confidence
 thresholds, stabilization, hold-to-fire stillness, gesture→action mapping,
 card state transitions, paint, brush shape-snapping, the adaptive halo,
 mouse-brush mapping, zoom, the command latch, compositing, the program

@@ -1,11 +1,10 @@
-# GestureCue — External Review Brief (Build 76)
+# GestureCue — External Review Brief (Build 82)
 
 > HOW TO USE: paste this whole document to the judging model, ideally with
-> read access to the repo at branch `visual-pedagogy` (work in progress,
-> based on `main` at tag `main-build-45`; earlier milestones tagged
-> `virtual-camera-works`, `virtual-camera-build-45`,
-> `visual-pedagogy-build-71`). Builds 46–71 are committed and pushed
-> (`3474dc9`); Builds 72–76 are staged and tested but uncommitted.
+> read access to the repo at `main` (published, tag `main-build-82`).
+> Everything below shipped on branch `visual-pedagogy` (Builds 46–82)
+> and merged. Earlier milestones tagged `virtual-camera-works`,
+> `virtual-camera-build-45`, `visual-pedagogy-build-71/76/82`.
 > The judging ask is at the bottom.
 
 ## 1. What this is
@@ -26,7 +25,7 @@ command window, so normal signing never triggers actions.
   the API key lives in the Keychain and per-source approval gates every
   network call.
 - Repo: Xcode project + Makefile (`make build|test|app|run|open|clean`),
-  XCTest suite (363 tests), docs + manual checklists in `docs/`.
+  XCTest suite (365 tests), docs + manual checklists in `docs/`.
 
 ## 2. Architecture (as claimed)
 
@@ -114,7 +113,8 @@ command window, so normal signing never triggers actions.
   ellipses on release (diagonals/scribbles stay freehand); an adaptive
   halo under the fading line keeps strokes legible over busy photos
   and white diagrams. Paint/brush activity keeps the command window
-  alive. (Mouse brush on the program monitor was implemented but is
+  alive. Persisted on/off toggles for the brush and pinch zoom.
+  (Mouse brush on the program monitor was implemented but is
   parked unverified as a future feature — see §6.)
 - Outputs: program monitor, OBS window, MP4 recording, native virtual
   camera with activation UI (Enable/Stop/Uninstall, approval + reboot
@@ -146,7 +146,7 @@ command window, so normal signing never triggers actions.
 - Accessibility UI: large text, contrast, VoiceOver labels, visible
   status; no sound dependence. Mouse/keyboard actions always work.
 
-## 4. Recent work (Builds 36–76)
+## 4. Recent work (Builds 36–82)
 
 - 36–40: extension target, provisioning (team X8YHS47G23), activation,
   sink discovery hardening, stable device/stream UUIDs, diagnostics.
@@ -235,14 +235,20 @@ command window, so normal signing never triggers actions.
   cause undetermined, user chose to skip debugging); on-screen
   promise removed, code stays inert and tested, spec filed in
   `docs/PENDING-FEATURES.md`.
-- Test count grew 179 → 363 across these builds, suite green throughout
+- 77: first custom app icon (asset catalog, 16–1024). 78: card cap
+  10 → 30. 79: pinch-zoom on/off toggle. 80: two-finger brush on/off
+  toggle (2 tests). 81: duplicate AI-deck menus merged into one.
+  82: output labels renamed (Program Monitor, Fullscreen Window,
+  Open/Close Window).
+- Test count grew 179 → 365 across these builds, suite green throughout
   (`xcodebuild test`), staged apps deep-codesign-verified.
 
 ## 5. Verification status (as claimed)
 
-- Automated: 363/363 XCTest green — classifier geometry, thresholds,
+- Automated: 365/365 XCTest green — classifier geometry, thresholds,
   stabilization, cooldown/debounce, stillness gating, mapping, card
-  transitions, paint/brush/fade math, brush shape-snapping, adaptive
+  transitions, paint/brush/fade math, brush toggle, brush
+  shape-snapping, adaptive
   halo (deterministic fixtures; trigger/polarity/linger matrix),
   mouse brush lifecycle + monitor mapping (crop/mirror/clamp),
   compositing, layout/fit helpers, title wrapping, virtual-camera
@@ -265,10 +271,9 @@ command window, so normal signing never triggers actions.
   This review caught the Build 51 diagram-band defect (fixed).
 - Faithful-mode live check (real API, exact Build 57 prompt): 3/3
   cards verbatim from slide-style source, empty art prompts, null
-  diagrams. Full in-app faithful run (import real PP → generate →
-  save → present) NOT yet run.
+  diagrams. Full in-app faithful run covered by flow P (user-checked).
 - Studio manual gate: ALL RUN — user reports ST-01..15 pass on the
-  Build 76 Studio (key round-trip, import, in-app generate/review/
+  Build 82 Studio (key round-trip, import, in-app generate/review/
   save, present over Zoom, gestures, brush shapes, brush legibility
   over photos + white diagrams, window-alive-while-brushing,
   cancel), plus flows H/F/P end to end. ST-16 mouse brush is parked

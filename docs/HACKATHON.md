@@ -1,4 +1,4 @@
-# GestureCue — Hackathon Record (branch `visual-pedagogy`)
+# GestureCue — Hackathon Record (Builds 46–82, merged to `main`)
 
 What was designed and built during the hackathon, on top of the
 pre-existing gesture + virtual-camera foundation from `main`
@@ -58,16 +58,25 @@ A Meta AI-powered lesson generator inside the native macOS app:
 - Mouse brush implemented then parked as a future feature (Builds
   74/76; see `docs/PENDING-FEATURES.md`).
 
+## Polish + toggles (Builds 77–82)
+
+- **App icon** — first custom icon (asset catalog, 16–1024).
+- **Card cap 10 → 30** in Studio generation (Build 78).
+- **Gesture toggles** — persisted on/off for pinch zoom and the
+  two-finger brush (Builds 79–80).
+- **Label polish** — duplicate AI-deck menus merged; output labels
+  renamed (Program Monitor, Fullscreen Window, Open/Close Window);
+  README feature rundown + pretty header (Builds 81–82).
+
 ## Verification produced
 
-- 363 XCTest tests (from 179), one known minor pre-existing warning;
+- 365 XCTest tests (from 179), one known minor pre-existing warning;
   strict-schema and faithful-prompt behavior proven against the live
   API; composited 720p + small-tile readability reviewed from real
   pipeline output; encoder round-trips (H.264, downscale, low
   bitrate) used to diagnose brush legibility.
-- Manual gates run by the user: ST-01..14 + flows H/F/P checked,
-  VC-02/03/04/06/07 checked; outstanding: ST-15, VC-01/05 (ST-16
-  parked with the mouse brush). Records live in
+- Manual gates: user reports all-run (ST-01..15, VC-01..07, flows
+  H/F/P); ST-16 parked with the mouse brush. Records live in
   `docs/USER-VERIFICATION-GATE.md`.
 - Review pack for judges: `HACKATHON-SUBMISSION.md` (one page),
   `docs/EXTERNAL-REVIEW.md` (adversarial brief),

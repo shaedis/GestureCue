@@ -1244,6 +1244,15 @@ deletions on conflict), read AGENTS.md + this tail, verify with
 make test (unsandboxed) + make app + codesign --verify --deep.
 Pending: user publishes to GitHub; parked: mouse brush, split-view.
 
+## 2026-10-31 — Docs truthfulness refresh (no build bump, docs only)
+
+User caught stale "on branch visual-pedagogy" framing after the main
+merges. Fixed: README Studio line + 363→365 counts; review brief to
+Build 82 (merged-state header, 77–82 entries, 365/365, faithful flow
+P marked covered); submission one-pager to Build 82 merged/all-run;
+hackathon record extended to 46–82 with all-run gates. No code
+changes; suite not re-run (identical tree to 365-green).
+
 ## Session end 2026-10-29 — reboot + resume checklist (branch virtual-camera, Build 40)
 
 State: activation LIVE since Build 38; host-to-sink frames not yet flowing
