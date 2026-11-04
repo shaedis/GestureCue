@@ -1,6 +1,6 @@
-# GestureCue — 3-minute competition demo (Build 76)
+# GestureCue — 3-minute competition demo (Build 82)
 
-Setup: staged app in `/Applications` (title shows Build 76), camera on,
+Setup: staged app in `/Applications` (title shows Build 82), camera on,
 Meta API key saved, Zoom open with **GestureCue Camera** selected. Have
 a history text and a fractions text ready to paste.
 

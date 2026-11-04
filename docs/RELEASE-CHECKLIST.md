@@ -2,7 +2,7 @@
 
 ## Automated (agent, every build)
 
-- [ ] `xcodebuild -scheme GestureCue -destination 'platform=macOS' test` — all green (baseline: 363)
+- [ ] `xcodebuild -scheme GestureCue -destination 'platform=macOS' test` — all green (baseline: 365)
 - [ ] Zero build warnings (`warning:` empty apart from AppIntents metadata noise; 1 known minor pre-existing in `StudioViewModel.swift:256`, unused result)
 - [ ] `make app` + `codesign --verify --deep --strict build/GestureCue.app`
 - [ ] Window title shows the new build number

@@ -1265,3 +1265,44 @@ AGENTS.md has the current resume section; README troubleshooting is current.
 3. User: Enable Camera (re-approve if asked), restart Zoom, select camera.
 4. If live video: run VC-03/04/06/07. If slate: paste frame-path log tail,
    Muse diagnoses from scan/AV/UID lines. Then commit + push branch (ask).
+
+## 2026-11-04 — README feature rundown + gate ticks (docs only)
+
+User asked for available features in the first lines of the GitHub
+page. Added a Features rundown at the top of README (7b24895), then
+ticked ST-15 (fixing a `[xx]` typo) and VC-01 in the gate (02e887a)
+after the user confirmed both done — VC-01 had been verified but
+never merged to main. Pushed to branch; merged to main.
+
+## 2026-11-04 — Pretty README, showcase-first (docs only)
+
+User: README is boring, make it pretty; judges' sections first.
+Pretty header (icon, badges, section markers, 86aecb1); moved AI
+Visual Education Studio directly under Features with Create/Refine/
+Try-it + verified line; reordered showcase-first (Features → AI
+Studio → Using → Virtual camera → What was built → setup chain →
+reference; 44f7178); named both generation modes with model use
+(Visual Educational: Spark storyboards + Image illustrates;
+Faithful Presentation: verbatim splits; 03ea3ea); fixed flipped
+above/below refs + stale Build 62. All merged to main.
+
+## 2026-11-04 — Contributors credit + Roadmap refresh (docs only)
+
+Added Contributors section crediting shaedis (display name per user;
+6d973bf) + refreshed stale Roadmap Studio line (Build 82,
+ST-01..15 verified, only VC-05 remaining). Merged to main
+(1707a90). GitHub sidebar showed "No contributors": commits are
+authored as edison.shadabi@arbetsformedlingen.se, unlinked to the
+shaedis account — user must add + verify that email under
+GitHub Settings → Emails for retroactive attribution.
+
+## 2026-11-04 — Session handoff (Build 82, branch 6d973bf, main 1707a90)
+
+All pushed, tree clean. Suite 365/365 green (last full run at Build
+80 code; README-only changes since). Staged app Build 82
+deep-verified. Gate: ST-01..15 + VC-01..04/06/07 ticked, VC-05 open,
+ST-16 parked (mouse brush, spec in PENDING-FEATURES.md; split-view
+also parked). Main keeps setup + QA docs only; branch keeps full
+dev record. Resume: AGENTS.md resume block + this tail; verify with
+make test (unsandboxed) + make app + codesign --verify --deep.
+Pending: user runs VC-05, publishes to GitHub.

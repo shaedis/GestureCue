@@ -236,3 +236,44 @@ user-approved documents go to Meta, API key in Keychain.
 - Build 62 (staged, UNCOMMITTED): Video + Card side-by-side position
   (whole camera aspect-fit in left tile, card right 40%). 282/282.
   User runs gate on 62.
+- Builds 63–71 (committed 3474dc9, tag visual-pedagogy-build-71):
+  PP original images reattached (63), PDF original images (64),
+  optional AI Instructions (65), save-confirm + auto-close (66),
+  adult prose for adults (67), video tile left/right/bottom (68),
+  fewer-cards confirmation (69), card-centric panel picker (70),
+  per-card regen spinner (71). Full detail in PROGRESS.md.
+- Builds 72–76 (committed 854324f, tag visual-pedagogy-build-76,
+  merged to main + tag main-build-76): brush shape snapping (72),
+  halo over photos (73), window-alive + mouse brush (74), adaptive
+  halo (75), mouse brush parked as future feature (76,
+  docs/PENDING-FEATURES.md). Gate ST-13/14/15 added; ST-16 parked.
+- Builds 77–82 (committed f8a955e, tag visual-pedagogy-build-82,
+  merged to main c6cc73a + tag main-build-82): app icon (77), card
+  cap 10→30 (78), pinch-zoom toggle (79), brush toggle (80,
+  365/365), merged deck menus (81), output labels renamed (82).
+- README series (docs-only, no build bump; all merged to main):
+  feature rundown, pretty header, ST-15 + VC-01 ticks, showcase-first
+  reorder, generation-mode names, Contributors credit. Main keeps
+  only setup guides + QA checklists; this branch keeps the full dev
+  record (PROGRESS, EXTERNAL-REVIEW, HACKATHON, gate, pending specs).
+
+## Branch visual-pedagogy (Build 82, 2026-11-04) — RESUME HERE
+
+Branch tip 6d973bf, main tip 1707a90 (both pushed; tags
+visual-pedagogy-build-82 + main-build-82 on origin). Suite 365/365
+green, staged app deep-verified, window title Build 82. User
+reports full gate all-run (ST-01..15, VC-01..07, flows H/F/P);
+file boxes ticked except VC-05 (open) and ST-16 (parked).
+
+- Verify: `make test` (unsandboxed shell) then `make app` +
+  `codesign --verify --deep build/GestureCue.app`; `make reinstall`
+  for host-only updates (no reboot, no extension bump).
+- Pending: user runs VC-05 + publishes to GitHub (repo
+  https://github.com/shaedis/GestureCue); parked: mouse brush
+  (ST-16), split-view — specs in docs/PENDING-FEATURES.md, do not
+  implement without approval.
+- Merge-back rule: future branch→main merges must KEEP main's doc
+  deletions (PROGRESS.md, HACKATHON-SUBMISSION.md, EXTERNAL-REVIEW.md,
+  HACKATHON.md) — resolve modify/delete conflicts with `git rm`.
+- Resume: read this file + PROGRESS.md tail; full build history
+  (Builds 46–82) lives in PROGRESS.md, not here.
