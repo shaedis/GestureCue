@@ -364,5 +364,10 @@ plus live runs against the real Meta API.
 2. **AI Visual Education Studio:** shipped on `main`
    (Meta Muse Spark + Muse Image, local diagrams,
    catalog round-trip, original-image reattachment, brush legibility,
-   Build 76); user-verified ST-01..14 + flows H/F/P; remaining:
-   ST-15, VC-01/05, and the merge decision.
+   Build 82); user-verified ST-01..15 + flows H/F/P; remaining:
+   VC-05.
+
+## 🙋 Contributors
+
+- [shaedis](https://github.com/shaedis) — design, implementation,
+  and on-camera verification.
