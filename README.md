@@ -1,17 +1,22 @@
-# GestureCue
+<div align="center">
+  <img src="GestureCue/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" alt="GestureCue icon: a hand over a presentation card">
+  <h1>GestureCue</h1>
+  <p><strong>Hand gestures turn your webcam feed into an interactive visual canvas.</strong><br>Presentation cards <em>inside</em> your video for Zoom &amp; Teams — built for Deaf and hard-of-hearing audiences, so viewers get the signer and the content in one frame.</p>
+  <p>
+    <img src="https://img.shields.io/badge/macOS-14%2B-999?style=flat-square&logo=apple&logoColor=white" alt="macOS 14+">
+    <img src="https://img.shields.io/badge/Swift-6.3-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 6.3">
+    <img src="https://img.shields.io/badge/tests-365%20passing-brightgreen?style=flat-square" alt="365 tests passing">
+    <img src="https://img.shields.io/badge/dependencies-zero-blue?style=flat-square" alt="zero dependencies">
+  </p>
+</div>
 
-A native macOS app that puts large, readable visual presentation cards
-*inside* the presenter's own webcam feed, controlled by hand gestures —
-no keyboard or mouse needed. Built primarily for Deaf and hard-of-hearing
-audiences: instead of splitting attention between interpreter, captions,
-slides, and speaker, viewers get the signer and the content in one frame.
 An AI Visual Education Studio (Meta Muse Spark + Muse Image) turns difficult
 source texts into illustrated lesson decks that present the same way.
 
 See [SPEC.md](SPEC.md) for scope, [AGENTS.md](AGENTS.md) for project rules,
 and [docs/](docs/) for setup guides and manual test checklists.
 
-## Features
+## ⚡ Features
 
 - **Gesture card control** — 8 webcam hand gestures (show, hide, next,
   previous, expand…) with stillness-gated holds; a signing-safe latch
@@ -34,13 +39,13 @@ and [docs/](docs/) for setup guides and manual test checklists.
   approved lesson sources ever reach the Meta API. No microphone, no
   analytics, no tracking.
 
-## Requirements
+## ✅ Requirements
 
 - macOS 14.0 or later (deployment target)
 - Xcode 26 with the macOS SDK (built and tested with Xcode 26.6 / Swift 6.3)
 - A built-in or USB webcam
 
-## Build and run
+## 🛠 Build and run
 
 ```sh
 make build   # compile
@@ -55,7 +60,7 @@ your Mac without a paid developer team. The `virtual-camera` and
 camera extension requires a provisioning profile — `make` needs an
 unsandboxed shell for portal access.
 
-## Install
+## 💾 Install
 
 1. Build and stage: `make app` → `build/GestureCue.app`.
 2. Copy it to `/Applications` (required for the virtual-camera system
@@ -72,7 +77,7 @@ unsandboxed shell for portal access.
 5. For the AI Studio: paste a Meta API key into the Studio's key field
    (stored in the Keychain) — see AI Visual Education Studio below.
 
-## Camera permission
+## 📷 Camera permission
 
 On first Start, macOS asks for camera access. If you deny it, the Camera panel
 shows how to re-enable access (System Settings → Privacy & Security → Camera)
@@ -80,7 +85,7 @@ with a button that opens Settings. All video is processed on-device; nothing
 leaves the Mac except MP4s you explicitly record, and the app never touches
 the mic.
 
-## Using the app
+## 🎮 Using the app
 
 1. Press **Start Camera** and grant permission.
 2. The camera ignores your hands while you sign. Hold an **open palm** still
@@ -133,7 +138,7 @@ straight drags snap to clean lines, loops to ellipses, and an adaptive halo
 keeps strokes readable over photos and white diagrams. Brushing counts as
 activity, so the 5-minute command window never expires mid-stroke.
 
-## Virtual camera
+## 📹 Virtual camera
 
 GestureCue also publishes its composited feed as a native
 **“GestureCue Camera”** (720p) that Zoom and Teams can select directly — no
@@ -218,7 +223,7 @@ Always test with the newest staged build (window title; currently Build
 - **Conflicts**: quit other virtual cameras (e.g. OBS Virtual Camera) if the
   feed stalls.
 
-## AI Visual Education Studio
+## ✨ AI Visual Education Studio
 
 On branch `visual-pedagogy`, the Studio window turns difficult source texts
 (history, fractions, science, Bible passages) into illustrated lesson decks
@@ -259,7 +264,7 @@ over Zoom): [docs/MANUAL-TEST-STUDIO.md](docs/MANUAL-TEST-STUDIO.md).
 The consolidated human gate (ST + VC steps with tick boxes) is
 [docs/USER-VERIFICATION-GATE.md](docs/USER-VERIFICATION-GATE.md).
 
-## What was built
+## 🏗 What was built
 
 - **Foundation (pre-hackathon, `main`):** 8-gesture recognition with
   stillness-gated holds, the signing-safe command latch, finger paint,
@@ -273,7 +278,7 @@ The consolidated human gate (ST + VC steps with tick boxes) is
   placement, brush shape-snapping, the adaptive legibility halo, and
   the activity-aware command window.
 
-## Architecture
+## 🏛 Architecture
 
 One shared capture pipeline feeds analysis, output, and recording:
 
@@ -303,7 +308,7 @@ thresholds); all Vision/gesture work runs off the main thread. Protocols and
 dependency injection keep every stage unit-testable with synthetic frames —
 no camera required.
 
-## Testing
+## 🧪 Testing
 
 363 XCTest unit tests in `GestureCueTests/` cover classification, confidence
 thresholds, stabilization, hold-to-fire stillness, gesture→action mapping,
@@ -316,7 +321,7 @@ image extraction).
 Camera/Zoom/API behavior additionally needs the manual checklists in `docs/`
 plus live runs against the real Meta API.
 
-## Limitations
+## ⚠️ Limitations
 
 - Single hand only (`maximumHandCount = 1`); the highest-confidence hand wins.
 - Best with a plain background, good lighting, and the hand 1–3 ft from the camera.
@@ -334,7 +339,7 @@ plus live runs against the real Meta API.
 - No visual layout editor (resize/reposition) and no cross-deck card
   move/duplicate yet.
 
-## Roadmap
+## 🗺 Roadmap
 
 1. **Virtual camera:** working and merged to `main`
    (CoreMediaIO camera extension behind the `VideoOutputService` seam,
