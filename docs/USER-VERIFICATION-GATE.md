@@ -64,7 +64,7 @@ Present on video:
       with YELLOW (the worst combo — halo separates it) and with RED
       (stays clean, no halo needed). Over dark text both look as
       before. Fade timing unchanged.
-- [xx] ST-15 Window stays alive while brushing (Build 74): arm
+- [x] ST-15 Window stays alive while brushing (Build 74): arm
       listening, then brush continuously with two fingers for a
       minute+ without firing any command → the "idles out in"
       countdown keeps resetting toward 5:00 and brushing never
@@ -84,7 +84,7 @@ Background + troubleshooting:
 update, so no reboot expected: `make reinstall` if a newer build
 lands mid-gate.
 
-- [ ] VC-01 Enable from clean state: Activating → (approval) → Live.
+- [x] VC-01 Enable from clean state: Activating → (approval) → Live.
 - [x] VC-02 Zoom/QuickTime lists GestureCue Camera; selecting it shows
       the composited feed (camera + card), not the raw webcam.
 - [x] VC-03 Next/Previous/paint gestures work while streaming; feed
