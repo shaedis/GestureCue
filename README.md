@@ -41,51 +41,54 @@ OBS/Zoom setup guide.
   approved lesson sources ever reach the Meta API. No microphone, no
   analytics, no tracking.
 
-## ✅ Requirements
+## ✨ AI Visual Education Studio
 
-- macOS 14.0 or later (deployment target)
-- Xcode 26 with the macOS SDK (built and tested with Xcode 26.6 / Swift 6.3)
-- A built-in or USB webcam
+Turn difficult source texts — history, fractions, science, Bible passages —
+into illustrated lesson decks using the Meta Model API
+(`https://api.meta.ai/v1`). Generated decks save into the catalog and
+present inside the composited video like any other cards.
 
-## 🛠 Build and run
+**Create**
 
-```sh
-make build   # compile
-make test    # 365 XCTest tests (run in an unsandboxed shell)
-make app     # stage build/GestureCue.app
-make open    # restart + open the staged app
-```
+- 📝 **Any source in** — paste text or import PDF / PowerPoint /
+  Markdown; the model plans up to 30 video-ready cards.
+- 🧠 **Muse Spark storyboards** (`muse-spark-1.3`) with a strict JSON
+  Schema the app enforces — adult prose for adults, verse word-for-word
+  for Bible subjects.
+- 🎨 **Muse Image illustrations** (`muse-image-1.0`) composed locally
+  with titles and labels in a consistent style.
+- 📐 **Exact local diagrams** — fraction circles, number lines,
+  timelines, cause→effect render deterministically on-device, free.
 
-On `main` the app is ad-hoc signed ("Sign to Run Locally"), so it runs on
-your Mac without a paid developer team. The `virtual-camera` and
-`visual-pedagogy` branches sign with team `X8YHS47G23` instead, because the
-camera extension requires a provisioning profile — `make` needs an
-unsandboxed shell for portal access.
+**Refine**
 
-## 💾 Install
+- ✏️ **Edit anything** — retitle, relabel, rewrite prompts per card.
+- ♻️ **Pay only for changes** — text refreshes re-compose free;
+  regeneration touches only edited cards.
+- 📚 **Faithful mode** — PDF/PowerPoint imports split your pages
+  verbatim: no rewritten text, your original images reattached, no
+  new art, no image API cost.
+- 🗂 **Catalog collections** — model-suggested, approval-gated; decks
+  round-trip back into the Studio for more edits.
 
-1. Build and stage: `make app` → `build/GestureCue.app`.
-2. Copy it to `/Applications` (required for the virtual-camera system
-   extension): `cp -R build/GestureCue.app /Applications/GestureCue.app`
-   (or `make reinstall`, which restages + replaces + reopens).
-3. Open the `/Applications` copy and confirm the window title shows the
-   expected build number. If macOS blocks the first launch (Gatekeeper),
-   right-click → Open once to approve it.
-4. Press **Start Camera**, grant camera access when asked, and pick a deck
-   in the catalog. For Zoom/Teams: press **Enable Camera** once, approve
-   the system extension in System Settings if asked, then select
-   **GestureCue Camera** in Zoom (full steps: Virtual camera below +
-   [docs/VIRTUAL-CAMERA-SETUP.md](docs/VIRTUAL-CAMERA-SETUP.md)).
-5. For the AI Studio: paste a Meta API key into the Studio's key field
-   (stored in the Keychain) — see AI Visual Education Studio below.
+**Try it**
 
-## 📷 Camera permission
+1. Get a key at [dev.meta.ai](https://dev.meta.ai) and paste it into the
+   Studio's key field — stored in the Keychain, never in files.
+2. Import source, pick audience / level / subject / style, and tick the
+   per-lesson approval box: nothing is transmitted until you approve.
+3. Generate, review, save to a collection, select it in the catalog.
 
-On first Start, macOS asks for camera access. If you deny it, the Camera panel
-shows how to re-enable access (System Settings → Privacy & Security → Camera)
-with a button that opens Settings. All video is processed on-device; nothing
-leaves the Mac except MP4s you explicitly record, and the app never touches
-the mic.
+🔒 **Privacy:** only approved source text and illustration prompts leave
+the Mac. Webcam frames are never transmitted — see the approval gate in
+`GestureCue/AI/StudioViewModel.swift`. One retry on 429/5xx with
+per-status errors; diagrams, refreshes, and faithful imports cost nothing.
+
+✅ **Verified:** 365 automated tests (mocked transport, no network in
+tests) plus user-run live end-to-end scenarios — history, fractions, and
+faithful PowerPoint import, Studio → catalog → Zoom — recorded in the
+human gate ([docs/USER-VERIFICATION-GATE.md](docs/USER-VERIFICATION-GATE.md)).
+Manual checklist: [docs/MANUAL-TEST-STUDIO.md](docs/MANUAL-TEST-STUDIO.md).
 
 ## 🎮 Using the app
 
@@ -187,7 +190,7 @@ Live by itself.
 ### Troubleshooting
 
 Always test with the newest staged build (window title; currently Build
-62) — earlier builds fail at different stages below.
+82) — earlier builds fail at different stages below.
 
 - **“Camera extension not found in this app bundle”**: a stale instance is
   still running (quit first — the single-instance guard keeps the old one),
@@ -225,47 +228,6 @@ Always test with the newest staged build (window title; currently Build
 - **Conflicts**: quit other virtual cameras (e.g. OBS Virtual Camera) if the
   feed stalls.
 
-## ✨ AI Visual Education Studio
-
-The Studio window turns difficult source texts
-(history, fractions, science, Bible passages) into illustrated lesson decks
-using the Meta Model API (`https://api.meta.ai/v1`): **Muse Spark**
-storyboard planning plus **Muse Image** illustrations, with deterministic
-local diagrams (fraction circles, number lines, timelines, cause→effect)
-for exact content. Generated decks save into the catalog and present
-inside the composited video like any other cards.
-
-Setup:
-
-1. Get a key at [dev.meta.ai](https://dev.meta.ai) and paste it into the
-   Studio's key field — it is stored in the Keychain, never in files.
-2. Import source (paste text, PDF, or PowerPoint), pick audience / level /
-   subject / style, and tick the per-lesson approval box: nothing is
-   transmitted until you approve each lesson.
-3. Generate, review each draft (retitle, relabel, edit prompts, refresh
-   text for free, regenerate only changed cards), then save to a collection.
-
-PDF and PowerPoint imports run in faithful mode: the model splits your
-pages/slides verbatim to fit video cards — no rewritten text, your original
-images reattached, no new illustrations or diagrams, and no image API cost.
-
-Privacy: only your approved source text and illustration prompts leave the
-Mac, to the Meta Model API. Webcam frames are never transmitted. See the
-approval gate in `GestureCue/AI/StudioViewModel.swift`.
-
-Integration notes: the client speaks the OpenAI-compatible `v1` endpoints
-(`chat/completions` for `muse-spark-1.3` plans, images for `muse-image-1.0`
-art) with a strict JSON Schema the app enforces on every plan (decoder
-validation, one retry on 429/5xx, per-status errors). Costs stay bounded:
-diagrams and text refreshes render locally for free, faithful imports make
-no image calls at all, and per-card regeneration refreshes only what you
-edited.
-
-Manual checklist (key round-trip, import, generate, review, save, present
-over Zoom): [docs/MANUAL-TEST-STUDIO.md](docs/MANUAL-TEST-STUDIO.md).
-The consolidated human gate (ST + VC steps with tick boxes) is
-[docs/USER-VERIFICATION-GATE.md](docs/USER-VERIFICATION-GATE.md).
-
 ## 🏗 What was built
 
 - **Foundation (pre-hackathon, `main`):** 8-gesture recognition with
@@ -280,6 +242,52 @@ The consolidated human gate (ST + VC steps with tick boxes) is
   placement, brush shape-snapping, the adaptive legibility halo, and
   the activity-aware command window. Full build-by-build record:
   [docs/HACKATHON.md](docs/HACKATHON.md).
+
+## ✅ Requirements
+
+- macOS 14.0 or later (deployment target)
+- Xcode 26 with the macOS SDK (built and tested with Xcode 26.6 / Swift 6.3)
+- A built-in or USB webcam
+
+## 🛠 Build and run
+
+```sh
+make build   # compile
+make test    # 365 XCTest tests (run in an unsandboxed shell)
+make app     # stage build/GestureCue.app
+make open    # restart + open the staged app
+```
+
+On `main` the app is ad-hoc signed ("Sign to Run Locally"), so it runs on
+your Mac without a paid developer team. The `virtual-camera` and
+`visual-pedagogy` branches sign with team `X8YHS47G23` instead, because the
+camera extension requires a provisioning profile — `make` needs an
+unsandboxed shell for portal access.
+
+## 💾 Install
+
+1. Build and stage: `make app` → `build/GestureCue.app`.
+2. Copy it to `/Applications` (required for the virtual-camera system
+   extension): `cp -R build/GestureCue.app /Applications/GestureCue.app`
+   (or `make reinstall`, which restages + replaces + reopens).
+3. Open the `/Applications` copy and confirm the window title shows the
+   expected build number. If macOS blocks the first launch (Gatekeeper),
+   right-click → Open once to approve it.
+4. Press **Start Camera**, grant camera access when asked, and pick a deck
+   in the catalog. For Zoom/Teams: press **Enable Camera** once, approve
+   the system extension in System Settings if asked, then select
+   **GestureCue Camera** in Zoom (full steps: Virtual camera above +
+   [docs/VIRTUAL-CAMERA-SETUP.md](docs/VIRTUAL-CAMERA-SETUP.md)).
+5. For the AI Studio: paste a Meta API key into the Studio's key field
+   (stored in the Keychain) — see AI Visual Education Studio above.
+
+## 📷 Camera permission
+
+On first Start, macOS asks for camera access. If you deny it, the Camera panel
+shows how to re-enable access (System Settings → Privacy & Security → Camera)
+with a button that opens Settings. All video is processed on-device; nothing
+leaves the Mac except MP4s you explicitly record, and the app never touches
+the mic.
 
 ## 🏛 Architecture
 
@@ -341,6 +349,8 @@ plus live runs against the real Meta API.
   server errors.
 - No visual layout editor (resize/reposition) and no cross-deck card
   move/duplicate yet.
+- Legacy `.ppt` needs conversion to `.pptx`; rare PDF Lab/16-bit images
+  are skipped.
 
 ## 🗺 Roadmap
 
@@ -348,8 +358,8 @@ plus live runs against the real Meta API.
    (CoreMediaIO camera extension behind the `VideoOutputService` seam,
    verified on camera in Zoom + QuickTime); remaining: VC-01..07
    checklist. Continued work happens on branch `virtual-camera`.
-2. **AI Visual Education Studio:** implemented on branch
-   `visual-pedagogy` (Meta Muse Spark + Muse Image, local diagrams,
+2. **AI Visual Education Studio:** shipped on `main`
+   (Meta Muse Spark + Muse Image, local diagrams,
    catalog round-trip, original-image reattachment, brush legibility,
    Build 76); user-verified ST-01..14 + flows H/F/P; remaining:
    ST-15, VC-01/05, and the merge decision.
