@@ -13,6 +13,29 @@ See [SPEC.md](SPEC.md) for scope, [AGENTS.md](AGENTS.md) for project rules,
 submission summary, and [docs/](docs/) for manual test checklists and the
 OBS/Zoom setup guide.
 
+## Features
+
+- **Gesture card control** — 8 webcam hand gestures (show, hide, next,
+  previous, expand…) with stillness-gated holds; a signing-safe latch
+  ignores hands until you arm a command window, so signing never
+  triggers actions.
+- **AI Visual Education Studio** — Meta Muse Spark plans illustrated
+  lessons from pasted text, PDFs, or PowerPoint; Muse Image illustrates
+  them; exact content (fractions, equations) renders as precise local
+  diagrams. Faithful mode splits existing decks verbatim with your
+  original pictures kept.
+- **Cards inside your video** — lessons composite into the webcam feed
+  (720p/1080p) and reach Zoom/Teams through the native **GestureCue
+  Camera**, with a fullscreen window for OBS capture as fallback.
+- **Paint & highlight live** — finger paint with undo/redo, a fading
+  two-finger brush (snaps to lines and circles, stays readable over
+  photos and diagrams), and pinch-to-zoom on pictures.
+- **Catalog & recording** — presentation library with collections,
+  one-click MP4 recording of the program feed, persisted paint strokes.
+- **Private by design** — camera-only, processed live on-device; only
+  approved lesson sources ever reach the Meta API. No microphone, no
+  analytics, no tracking.
+
 ## Requirements
 
 - macOS 14.0 or later (deployment target)
