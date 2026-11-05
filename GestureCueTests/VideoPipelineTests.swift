@@ -1052,6 +1052,391 @@ final class VideoPipelineTests: XCTestCase {
         XCTAssertEqual(snapshot?.candidate, .unknown)
         XCTAssertEqual(snapshot?.landmarks, [])
     }
+
+    // MARK: - Split layout (text bottom + picture side)
+
+    func testSplitTextRectIsASubtitleStrip() {
+        let strip = CardOverlayCompositor.splitTextRect(width: 1280, height: 720)
+        let bottom = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .bottom)
+        XCTAssertEqual(strip.height, 720 * 0.22, accuracy: 0.01)
+        XCTAssertLessThan(strip.height, bottom.height)
+        XCTAssertEqual(strip.width, bottom.width, "strip keeps the full banner width")
+        XCTAssertEqual(strip.minY, bottom.minY, "strip stays bottom-anchored")
+        XCTAssertEqual(
+            CardOverlayCompositor.cardRect(width: 1280, height: 720, position: .split),
+            strip
+        )
+    }
+
+    func testSplitPicturePanelsSitAboveBannerWithoutOverlap() {
+        let frame = CGRect(x: 0, y: 0, width: 1280, height: 720)
+        let text = CardOverlayCompositor.splitTextRect(width: 1280, height: 720)
+        for side in [CardPanelPosition.left, .right] {
+            let panel = CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: side)
+            XCTAssertTrue(frame.contains(panel), "\(side) panel must stay inside the frame")
+            XCTAssertGreaterThanOrEqual(panel.minY, text.maxY, "\(side) panel must clear the text banner")
+            XCTAssertTrue(panel.intersection(text).isNull, "\(side) panel must not overlap the text banner")
+            XCTAssertGreaterThan(panel.width, 100)
+            XCTAssertGreaterThan(panel.height, 100)
+        }
+    }
+
+    func testSplitPictureSidesMirrorAndBottomReadsAsRight() {
+        let left = CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: .left)
+        let right = CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: .right)
+        XCTAssertLessThan(left.midX, 640)
+        XCTAssertGreaterThan(right.midX, 640)
+        XCTAssertEqual(left.width, right.width)
+        XCTAssertEqual(left.height, right.height)
+        XCTAssertEqual(
+            CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: .bottom),
+            right
+        )
+    }
+
+    func testPaintClipRectsCoverBothSplitHalves() {
+        let single = CardOverlayCompositor.paintClipRects(width: 1280, height: 720, position: .bottom)
+        XCTAssertEqual(single.count, 1)
+        let split = CardOverlayCompositor.paintClipRects(
+            width: 1280, height: 720, position: .split, cardPanel: .left, hasImage: true
+        )
+        XCTAssertEqual(split, [
+            CardOverlayCompositor.splitTextRect(width: 1280, height: 720),
+            CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: .left),
+        ])
+        // No picture drawn, no panel to paint: the strip alone.
+        let textOnly = CardOverlayCompositor.paintClipRects(
+            width: 1280, height: 720, position: .split, hasImage: false
+        )
+        XCTAssertEqual(textOnly, [CardOverlayCompositor.splitTextRect(width: 1280, height: 720)])
+        // Expanded split is one fullscreen card.
+        let expanded = CardOverlayCompositor.paintClipRects(
+            width: 1280, height: 720, position: .split, expanded: true, hasImage: true
+        )
+        XCTAssertEqual(expanded.count, 1)
+    }
+
+    func testSplitRendersTextInBannerAndPictureInPanel() throws {
+        // Red-top/blue-bottom probe art: the panel must show probe
+        // colors while the bottom band shows glyphs, never art.
+        let art = try XCTUnwrap(makeTestImageData())
+        let card = PresentationCard(title: "Split probe", message: "Text stays in the banner.", imageData: art)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .split, cardPanel: .right))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Memory rows are y-down: bottom band = rows 0.7..<1.0.
+        let glyphs = coloredPixelCount(output, yFraction: 0.7 ..< 1.0) { r, g, b in r > 200 && g > 200 && b > 200 }
+        XCTAssertGreaterThan(glyphs, 100, "text banner must render glyphs")
+        // Right panel, upper half: probe red or blue, never mid gray.
+        let probe = coloredPixelCount(output, yFraction: 0.05 ..< 0.5, xFraction: 0.6 ..< 1.0) { r, g, b in
+            (r > 150 && b < 100) || (b > 150 && r < 100)
+        }
+        XCTAssertGreaterThan(probe, 500, "side panel must show the picture")
+        // Left upper area stays clean video (no panel, no glyphs).
+        let clean = coloredPixelCount(output, yFraction: 0.05 ..< 0.5, xFraction: 0.0 ..< 0.5) { r, g, b in
+            abs(Int(r) - 128) > 4 || abs(Int(g) - 128) > 4 || abs(Int(b) - 128) > 4
+        }
+        XCTAssertEqual(clean, 0, "opposite side must stay clean video")
+    }
+
+    func testSplitWithoutPictureShowsStripAlone() throws {
+        let card = PresentationCard(title: "Text only", message: "No picture attached.")
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .split))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Glyphs land in the strip (bottom band); everything above it
+        // stays clean video — no side panel without a picture.
+        let glyphs = coloredPixelCount(output, yFraction: 0.7 ..< 1.0) { r, g, b in r > 200 && g > 200 && b > 200 }
+        XCTAssertGreaterThan(glyphs, 100, "strip must render glyphs")
+        let above = coloredPixelCount(output, yFraction: 0.0 ..< 0.65) { r, g, b in
+            abs(Int(r) - 128) > 4 || abs(Int(g) - 128) > 4 || abs(Int(b) - 128) > 4
+        }
+        XCTAssertEqual(above, 0, "frame above the strip must stay clean video")
+    }
+
+    func testTextlessSplitPanelSpansFullHeight() {
+        let panel = CardOverlayCompositor.splitPictureRect(width: 1280, height: 720, side: .right, fullHeight: true)
+        XCTAssertEqual(panel.minY, 1280 * 0.04, accuracy: 0.01)
+        XCTAssertEqual(panel.maxY, 720 - 1280 * 0.04, accuracy: 0.01)
+        XCTAssertEqual(panel.width, 1280 * 0.36, accuracy: 0.01)
+        // Paint clips to the panel alone (no strip to paint).
+        XCTAssertEqual(
+            CardOverlayCompositor.paintClipRects(
+                width: 1280, height: 720, position: .split, cardPanel: .right, hasImage: true, hasText: false
+            ),
+            [panel]
+        )
+        // Subtitles sit beside the panel, never over it.
+        let subtitle = CardOverlayCompositor.subtitleRect(
+            width: 1280, height: 720, position: .split, cardPanel: .right, cardVisible: true, hasText: false
+        )
+        XCTAssertTrue(subtitle.intersection(panel).isNull)
+        XCTAssertLessThanOrEqual(subtitle.maxX, panel.minX)
+    }
+
+    func testTextlessSplitSkipsStripAndExtendsPanel() throws {
+        let art = try XCTUnwrap(makeTestImageData())
+        let card = PresentationCard(title: "", message: "", imageData: art)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .split, cardPanel: .right))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Where the strip would be (left of the panel): clean video, no backdrop.
+        let clean = coloredPixelCount(output, yFraction: 0.75 ..< 0.9, xFraction: 0.05 ..< 0.5) { r, g, b in
+            abs(Int(r) - 128) > 4 || abs(Int(g) - 128) > 4 || abs(Int(b) - 128) > 4
+        }
+        XCTAssertEqual(clean, 0, "textless split must draw no text strip")
+        // The panel reaches down into the freed room: probe art, not video.
+        let probe = coloredPixelCount(output, yFraction: 0.75 ..< 0.9, xFraction: 0.65 ..< 0.9) { r, g, b in
+            (r > 150 && b < 100) || (b > 150 && r < 100)
+        }
+        let total = (Int(1280 * 0.9) - Int(1280 * 0.65)) * (Int(720 * 0.9) - Int(720 * 0.75))
+        XCTAssertGreaterThan(Double(probe) / Double(total), 0.9, "panel must extend to the bottom margin")
+    }
+
+    func testAspectFillCoversBox() {
+        // Wide image in a tall box: full height, cropped sides.
+        let filled = CardOverlayCompositor.aspectFill(CGSize(width: 96, height: 64), in: CGRect(x: 10, y: 20, width: 100, height: 200))
+        XCTAssertEqual(filled.height, 200, accuracy: 0.01)
+        XCTAssertGreaterThan(filled.width, 100)
+        XCTAssertEqual(filled.midX, 60, accuracy: 0.01)
+        XCTAssertEqual(filled.midY, 120, accuracy: 0.01)
+    }
+
+    func testSplitPanelCoversBoxWithoutBars() throws {
+        // Probe art must cover the panel box fully: no black bars.
+        let art = try XCTUnwrap(makeTestImageData())
+        let card = PresentationCard(title: "Cover", message: "Panel fills fully.", imageData: art)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .split, cardPanel: .right))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Interior of the panel box (memory rows y-down): probe red or
+        // blue almost everywhere — bars or backdrop would fail this.
+        let probe = coloredPixelCount(output, yFraction: 0.15 ..< 0.6, xFraction: 0.65 ..< 0.9) { r, g, b in
+            (r > 150 && b < 100) || (b > 150 && r < 100)
+        }
+        let total = (Int(1280 * 0.9) - Int(1280 * 0.65)) * (Int(720 * 0.6) - Int(720 * 0.15))
+        XCTAssertGreaterThan(Double(probe) / Double(total), 0.9, "panel box must be covered by art, not bars")
+    }
+
+    // MARK: - Live subtitle overlay + live position
+
+    func testLiveCardPositionFlipsBottomToLeft() {
+        XCTAssertEqual(AppViewModel.liveCardPosition(from: .bottom), .left)
+        for position in [CardOverlayPosition.left, .right, .sideBySide, .split] {
+            XCTAssertEqual(AppViewModel.liveCardPosition(from: position), position)
+        }
+    }
+
+    func testLiveSubtitleTextMirrorsKeystrokes() {
+        XCTAssertNil(AppViewModel.liveSubtitleText(from: ""))
+        XCTAssertNil(AppViewModel.liveSubtitleText(from: "   "))
+        XCTAssertEqual(AppViewModel.liveSubtitleText(from: "Hello"), "Hello")
+        XCTAssertEqual(AppViewModel.liveSubtitleText(from: "Hello "), "Hello ", "raw keystrokes show while typing")
+        XCTAssertEqual(AppViewModel.liveSubtitleText(from: "Line one\nLine two"), "Line one\nLine two", "newlines pass through")
+    }
+
+    func testSubtitleStripGrowsPerLine() {
+        let one = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 1)
+        let two = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 2)
+        let three = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 3)
+        XCTAssertLessThan(one.height, two.height)
+        XCTAssertLessThan(two.height, three.height)
+        XCTAssertEqual(three.height, CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 9).height, "growth caps at 3 lines")
+        XCTAssertLessThan(one.height, CardOverlayCompositor.splitTextRect(width: 1280, height: 720).height, "one line starts slim")
+    }
+
+    func testSubtitleLineCount() {
+        let size: CGFloat = 27
+        let wide: CGFloat = 1000
+        XCTAssertEqual(CardOverlayCompositor.subtitleLineCount("Hello", fontSize: size, maxWidth: wide), 1)
+        XCTAssertEqual(CardOverlayCompositor.subtitleLineCount("One\nTwo", fontSize: size, maxWidth: wide), 2)
+        XCTAssertEqual(CardOverlayCompositor.subtitleLineCount("One\nTwo\nThree", fontSize: size, maxWidth: wide), 3)
+        let long = String(repeating: "word ", count: 100)
+        XCTAssertGreaterThan(CardOverlayCompositor.subtitleLineCount(long, fontSize: size, maxWidth: 200), 3, "narrow width wraps")
+        XCTAssertEqual(CardOverlayCompositor.subtitleLineCount("", fontSize: size, maxWidth: wide), 1)
+    }
+
+    func testSubtitleRectBaseCases() {
+        let base = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720)
+        // Hidden card, fullscreen expand, side-by-side video tile: full strip.
+        XCTAssertEqual(CardOverlayCompositor.subtitleRect(width: 1280, height: 720, position: .bottom), base)
+        XCTAssertEqual(
+            CardOverlayCompositor.subtitleRect(width: 1280, height: 720, position: .bottom, expanded: true, cardVisible: true),
+            base
+        )
+        XCTAssertEqual(
+            CardOverlayCompositor.subtitleRect(width: 1280, height: 720, position: .sideBySide, cardPanel: .right, cardVisible: true),
+            base
+        )
+    }
+
+    func testSubtitleRectSitsBesideSideCards() {
+        for position in [CardOverlayPosition.left, .right] {
+            let card = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: position)
+            let subtitle = CardOverlayCompositor.subtitleRect(
+                width: 1280, height: 720, position: position, cardVisible: true
+            )
+            XCTAssertTrue(subtitle.intersection(card).isNull, "\(position) subtitle must not cover the card")
+            XCTAssertGreaterThan(subtitle.width, 400, "\(position) subtitle keeps usable width")
+            if position == .left {
+                XCTAssertGreaterThanOrEqual(subtitle.minX, card.maxX)
+            } else {
+                XCTAssertLessThanOrEqual(subtitle.maxX, card.minX)
+            }
+        }
+    }
+
+    func testSubtitleRectLiftsAboveBottomCards() {
+        let frame = CGRect(x: 0, y: 0, width: 1280, height: 720)
+        let cases: [(CardOverlayPosition, CardPanelPosition)] = [
+            (.bottom, .right), (.split, .left), (.sideBySide, .bottom),
+        ]
+        for (position, panel) in cases {
+            let card = CardOverlayCompositor.cardRect(width: 1280, height: 720, position: position, cardPanel: panel)
+            let subtitle = CardOverlayCompositor.subtitleRect(
+                width: 1280, height: 720, position: position, cardPanel: panel, cardVisible: true
+            )
+            XCTAssertTrue(frame.contains(subtitle), "\(position) subtitle must stay inside the frame")
+            XCTAssertGreaterThanOrEqual(subtitle.minY, card.maxY, "\(position) subtitle must clear the card")
+            XCTAssertTrue(subtitle.intersection(card).isNull, "\(position) subtitle must not overlap the card")
+        }
+    }
+
+    func testSubtitleRendersOverCleanVideo() throws {
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: nil, isVisible: false, subtitle: "Hello live audience"))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Memory rows are y-down: strip = rows 0.7..<1.0.
+        let glyphs = coloredPixelCount(output, yFraction: 0.7 ..< 1.0) { r, g, b in r > 200 && g > 200 && b > 200 }
+        XCTAssertGreaterThan(glyphs, 100, "subtitle must render glyphs with no card showing")
+    }
+
+    func testSubtitleCoexistsWithSideCard() throws {
+        let card = PresentationCard(title: "Side card stays", message: "The subtitle must not remove it.")
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(
+            card: card, isVisible: true, position: .left,
+            subtitle: "This is a live subtitle shown under the side card"
+        ))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let bright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        // Left panel above the strip: card glyphs.
+        let cardGlyphs = coloredPixelCount(output, yFraction: 0.1 ..< 0.5, xFraction: 0.05 ..< 0.35, where: bright)
+        XCTAssertGreaterThan(cardGlyphs, 50, "side card must keep rendering")
+        // Strip right of the card: subtitle glyphs (centered text spans the middle).
+        let subGlyphs = coloredPixelCount(output, yFraction: 0.72 ..< 0.95, xFraction: 0.55 ..< 0.7, where: bright)
+        XCTAssertGreaterThan(subGlyphs, 50, "subtitle must render alongside the side card")
+    }
+
+    func testSubtitleLiftsAboveBottomCard() throws {
+        let card = PresentationCard(title: "Bottom card", message: "Subtitle floats above this banner.")
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(
+            card: card, isVisible: true, position: .bottom, subtitle: "Lifted two-liner live"
+        ))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let bright: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in r > 200 && g > 200 && b > 200 }
+        // Banner band keeps the card's glyphs; the lifted strip above it shows the subtitle.
+        let cardGlyphs = coloredPixelCount(output, yFraction: 0.66 ..< 0.9, where: bright)
+        XCTAssertGreaterThan(cardGlyphs, 100, "bottom card must keep rendering")
+        let subGlyphs = coloredPixelCount(output, yFraction: 0.4 ..< 0.62, where: bright)
+        XCTAssertGreaterThan(subGlyphs, 50, "subtitle must render above the bottom card")
+    }
+
+    func testSubtitleBackdropGrowsWithLines() throws {
+        func darkCount(_ subtitle: String) throws -> Int {
+            let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+            let compositor = CardOverlayCompositor()
+            compositor.updateOverlay(ProgramOverlay(card: nil, isVisible: false, subtitle: subtitle))
+            let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+            return coloredPixelCount(output) { r, g, b in r < 80 && g < 80 && b < 80 }
+        }
+        let one = try darkCount("Single line")
+        let three = try darkCount("First\nSecond\nThird")
+        XCTAssertGreaterThan(one, 1000, "sanity: one-line backdrop renders")
+        XCTAssertGreaterThan(three, one * 3 / 2, "three lines need a clearly taller strip")
+    }
+
+    func testSidePanelCoversArtWithoutBars() throws {
+        // Probe art in a left panel: the bar zone near the picture-box
+        // edge must show art, not backdrop.
+        let art = try XCTUnwrap(makeTestImageData())
+        let card = PresentationCard(title: "T", message: "", imageData: art)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .left))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let probe = coloredPixelCount(output, yFraction: 0.18 ..< 0.28, xFraction: 0.1 ..< 0.3) { r, g, b in
+            (r > 150 && b < 100) || (b > 150 && r < 100)
+        }
+        let total = (Int(1280 * 0.3) - Int(1280 * 0.1)) * (Int(720 * 0.28) - Int(720 * 0.18))
+        XCTAssertGreaterThan(Double(probe) / Double(total), 0.9, "side panel must cover art without bars")
+    }
+
+    func testSidePanelFitsDiagramsUncropped() throws {
+        // Same geometry, but a diagram keeps aspect-fit: the bar zone
+        // stays dark backdrop so no edge label is ever cropped.
+        let art = try XCTUnwrap(makeTestImageData())
+        let card = PresentationCard(title: "T", message: "", imageData: art, diagramKind: "fractionCircle")
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: card, isVisible: true, position: .left))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let dark = coloredPixelCount(output, yFraction: 0.18 ..< 0.28, xFraction: 0.1 ..< 0.3) { r, g, b in
+            r < 80 && g < 80 && b < 80
+        }
+        let total = (Int(1280 * 0.3) - Int(1280 * 0.1)) * (Int(720 * 0.28) - Int(720 * 0.18))
+        XCTAssertGreaterThan(Double(dark) / Double(total), 0.9, "diagrams must fit with bars intact")
+    }
+
+    func testSubtitleStyleDefaultsAndRoundTrip() throws {
+        let style = SubtitleStyle()
+        XCTAssertEqual(style.scale, 1)
+        XCTAssertEqual(style.textColor, SubtitleRGBA(red: 1, green: 1, blue: 1, alpha: 0.95))
+        XCTAssertEqual(style.backgroundColor, SubtitleRGBA(red: 0, green: 0, blue: 0, alpha: 0.72))
+        let data = try JSONEncoder().encode(style)
+        XCTAssertEqual(try JSONDecoder().decode(SubtitleStyle.self, from: data), style)
+    }
+
+    func testSubtitleStripGrowsWithScale() {
+        let normal = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 1, scale: 1)
+        let large = CardOverlayCompositor.liveSubtitleStrip(width: 1280, height: 720, lines: 1, scale: 1.5)
+        XCTAssertGreaterThan(large.height, normal.height * 1.2)
+    }
+
+    func testSubtitleCustomBackgroundRenders() throws {
+        var style = SubtitleStyle()
+        style.backgroundColor = SubtitleRGBA(red: 1, green: 0, blue: 0, alpha: 1)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: nil, isVisible: false, subtitle: "Hi", subtitleStyle: style))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        // Strip interior away from the centered glyphs and corners.
+        let red = coloredPixelCount(output, yFraction: 0.86 ..< 0.92, xFraction: 0.055 ..< 0.075) { r, g, b in
+            r > 150 && g < 100 && b < 100
+        }
+        XCTAssertGreaterThan(red, 900, "custom background color must render")
+    }
+
+    func testSubtitleCustomTextColorRenders() throws {
+        var style = SubtitleStyle()
+        style.textColor = SubtitleRGBA(red: 1, green: 0, blue: 0, alpha: 1)
+        let frame = try XCTUnwrap(makePixelBuffer(width: 1280, height: 720, gray: 128))
+        let compositor = CardOverlayCompositor()
+        compositor.updateOverlay(ProgramOverlay(card: nil, isVisible: false, subtitle: "Hello red world", subtitleStyle: style))
+        let output = try XCTUnwrap(compositor.composite(cameraFrame: frame, presentationTimeStamp: .zero))
+        let glyphs = coloredPixelCount(output, yFraction: 0.84 ..< 0.94) { r, g, b in
+            r > 150 && g < 100 && b < 100
+        }
+        XCTAssertGreaterThan(glyphs, 50, "custom text color must render")
+    }
 }
 
 private final class StubVideoOutput: VideoOutputService, @unchecked Sendable {

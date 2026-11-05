@@ -31,9 +31,16 @@ help text was removed so the app advertises nothing unverified.
   gate item ST-16, verify strokes land under the cursor and show in
   the Zoom tile.
 
-## Split-view presentation layout — AWAITING APPROVAL
+## Split-view presentation layout — IMPLEMENTED on branch `live-generation` (Build 83, UNMERGED)
 
-Proposed 2026-10-30 (user request, parked before implementation).
+Proposed 2026-10-30 (user request, parked before implementation);
+approved + built 2026-11-05. Render-time split in the compositor
+(no Studio/deck changes, as assessed): subtitle text strip +
+side picture panel, paint clips to both halves, zoom targets the
+panel, Expand unchanged (fullscreen card). Differs from the sketch:
+full-width strip (not bottom-left), aspect-cover art (not fit),
+textless cards go full-height panel with no strip. Gate ST-18
+covers verification (unticked); merge to `main` held for user go.
 
 **Idea:** present two tiles at once instead of one card — the
 illustration as a left/right side tile plus the texts as a bottom band,

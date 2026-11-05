@@ -98,6 +98,47 @@ enum AISubject: String, CaseIterable, Codable, Sendable {
     }
 }
 
+/// Render style for generated pictures: presets so presenters get a
+/// good look without writing style prompts themselves. The prompt
+/// travels as the image call's style line; scenes stay edge-safe
+/// (side panels crop) and carry no readable text.
+enum AIArtStyle: String, CaseIterable, Codable, Sendable {
+    case vector
+    case photorealistic
+    case animated
+    case watercolor
+    case comic
+    case pencil
+
+    var displayName: String {
+        switch self {
+        case .vector: "Flat vector"
+        case .photorealistic: "Photorealistic"
+        case .animated: "Animated 3D"
+        case .watercolor: "Watercolor"
+        case .comic: "Comic book"
+        case .pencil: "Pencil sketch"
+        }
+    }
+
+    var stylePrompt: String {
+        switch self {
+        case .vector:
+            "Warm flat vector illustration, consistent characters and palette"
+        case .photorealistic:
+            "Photorealistic photo, natural light, sharp focus, balanced composition with margin around the subject"
+        case .animated:
+            "Cheerful 3D animated film still, soft volumetric light, expressive characters"
+        case .watercolor:
+            "Soft watercolor illustration, gentle washes, light background"
+        case .comic:
+            "Bold comic-book illustration, clean ink lines, flat colors"
+        case .pencil:
+            "Detailed pencil sketch, soft shading, light paper background"
+        }
+    }
+}
+
 /// Visual presentation style for the lesson.
 enum AIVisualStyle: String, CaseIterable, Codable, Sendable {
     case story

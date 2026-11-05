@@ -53,6 +53,7 @@
 		100000000000000000000299 /* IllustrationComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000292 /* IllustrationComposer.swift */; };
 		10000000000000000000029A /* DiagramRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000293 /* DiagramRenderer.swift */; };
 		10000000000000000000029B /* LessonGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000294 /* LessonGenerator.swift */; };
+		1000000000000000000002A7 /* LiveCardComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000002A6 /* LiveCardComposer.swift */; };
 		10000000000000000000029C /* StudioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000295 /* StudioViewModel.swift */; };
 		10000000000000000000029D /* StudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000296 /* StudioView.swift */; };
 		1000000000000000000002A1 /* PdfImageExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000000000002A0 /* PdfImageExtractor.swift */; };
@@ -138,6 +139,7 @@
 		100000000000000000000292 /* IllustrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IllustrationComposer.swift; sourceTree = "<group>"; };
 		100000000000000000000293 /* DiagramRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagramRenderer.swift; sourceTree = "<group>"; };
 		100000000000000000000294 /* LessonGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonGenerator.swift; sourceTree = "<group>"; };
+		1000000000000000000002A6 /* LiveCardComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCardComposer.swift; sourceTree = "<group>"; };
 		100000000000000000000295 /* StudioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioViewModel.swift; sourceTree = "<group>"; };
 		100000000000000000000296 /* StudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudioView.swift; sourceTree = "<group>"; };
 		1000000000000000000002A0 /* PdfImageExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfImageExtractor.swift; sourceTree = "<group>"; };
@@ -335,6 +337,7 @@
 				100000000000000000000292 /* IllustrationComposer.swift */,
 				100000000000000000000293 /* DiagramRenderer.swift */,
 				100000000000000000000294 /* LessonGenerator.swift */,
+				1000000000000000000002A6 /* LiveCardComposer.swift */,
 				100000000000000000000295 /* StudioViewModel.swift */,
 				1000000000000000000002A0 /* PdfImageExtractor.swift */,
 			);
@@ -526,6 +529,7 @@
 				100000000000000000000299 /* IllustrationComposer.swift in Sources */,
 				10000000000000000000029A /* DiagramRenderer.swift in Sources */,
 				10000000000000000000029B /* LessonGenerator.swift in Sources */,
+				1000000000000000000002A7 /* LiveCardComposer.swift in Sources */,
 				10000000000000000000029C /* StudioViewModel.swift in Sources */,
 				10000000000000000000029D /* StudioView.swift in Sources */,
 				1000000000000000000002A1 /* PdfImageExtractor.swift in Sources */,

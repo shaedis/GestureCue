@@ -48,6 +48,11 @@ final class AppViewModel: ObservableObject {
     }
     @Published var cardPosition: CardOverlayPosition {
         didSet {
+            // Split mode has no bottom picture side: a leftover from
+            // Video + Card falls back to right (the renderer agrees).
+            if cardPosition == .split, cardPanelPosition == .bottom {
+                cardPanelPosition = .right
+            }
             UserDefaults.standard.set(cardPosition.rawValue, forKey: Self.cardPositionKey)
             syncOverlay()
         }
@@ -86,6 +91,39 @@ final class AppViewModel: ObservableObject {
             paintController.setBrushEnabled(brushEnabled)
         }
     }
+    /// Studio access for live card generation (set once by the app;
+    /// weak: the Studio model already holds this model strongly).
+    weak var studio: StudioViewModel?
+    /// Live composer state: prompt + direct text. Generating appends
+    /// the new card to the active deck and shows it at once, replacing
+    /// whatever the audience sees.
+    @Published var livePrompt = ""
+    @Published var liveMode: LiveCardMode = .textAndPicture
+    @Published var liveArtStyle: AIArtStyle = .vector
+    /// Live typing: every keystroke mirrors to the video subtitle at
+    /// once (no button press); blank text hides it.
+    @Published var liveText = "" {
+        didSet {
+            let next = Self.liveSubtitleText(from: liveText)
+            if liveSubtitle != next {
+                liveSubtitle = next
+                syncOverlay()
+            }
+        }
+    }
+    @Published var liveSubtitle: String?
+    /// Subtitle look (persisted): size scale + text/background colors.
+    @Published var subtitleStyle: SubtitleStyle {
+        didSet {
+            if let data = try? JSONEncoder().encode(subtitleStyle) {
+                UserDefaults.standard.set(data, forKey: Self.subtitleStyleKey)
+            }
+            syncOverlay()
+        }
+    }
+    @Published var isLiveGenerating = false
+    @Published private(set) var liveError: String?
+    private var liveTask: Task<Void, Never>?
     @Published private(set) var painting = false
     @Published private(set) var isOutputRunning = false
     @Published private(set) var outputMirrored = false
@@ -118,6 +156,7 @@ final class AppViewModel: ObservableObject {
     private static let detectionPausedKey = "GestureCue.detectionPaused"
     private static let zoomEnabledKey = "GestureCue.zoomEnabled"
     private static let brushEnabledKey = "GestureCue.brushEnabled"
+    private static let subtitleStyleKey = "GestureCue.subtitleStyle"
     private var cancellations = Set<AnyCancellable>()
     private var commandWindow = CommandWindow()
     private var lastPaintActivity = Date.distantPast
@@ -193,6 +232,13 @@ final class AppViewModel: ObservableObject {
         self.outputMirrorMode = OutputMirrorMode(
             rawValue: UserDefaults.standard.string(forKey: Self.mirrorModeKey) ?? ""
         ) ?? .auto
+        if let data = UserDefaults.standard.data(forKey: Self.subtitleStyleKey),
+           let saved = try? JSONDecoder().decode(SubtitleStyle.self, from: data)
+        {
+            self.subtitleStyle = saved
+        } else {
+            self.subtitleStyle = SubtitleStyle()
+        }
         paintController.setColor(paintColor)
         paintController.setCurrentCard(store.currentCard?.id)
 
@@ -382,6 +428,69 @@ final class AppViewModel: ObservableObject {
         afterDeckContentChanged()
     }
 
+    var canLiveGenerate: Bool {
+        !isLiveGenerating && !livePrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Generates a card from the live prompt and shows it at once. The
+    /// Generate press is the approval: exactly this prompt is
+    /// transmitted to the Meta Model API.
+    func liveGenerate() {
+        let prompt = livePrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canLiveGenerate, !prompt.isEmpty else { return }
+        guard let studio else {
+            liveError = "Live generation is unavailable."
+            return
+        }
+        liveError = nil
+        isLiveGenerating = true
+        let mode = liveMode
+        let artStyle = liveArtStyle
+        liveTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                self.liveTask = nil
+                self.isLiveGenerating = false
+            }
+            do {
+                let card = try await studio.generateLiveCard(prompt: prompt, mode: mode, artStyle: artStyle)
+                try Task.checkCancellation()
+                self.cardPosition = Self.liveCardPosition(from: self.cardPosition)
+                self.store.addCard(card)
+                self.store.show()
+                self.afterDeckContentChanged()
+                self.livePrompt = ""
+            } catch is CancellationError {
+            } catch {
+                self.liveError = error.localizedDescription
+            }
+        }
+    }
+
+    func cancelLiveGeneration() {
+        liveTask?.cancel()
+        liveTask = nil
+        isLiveGenerating = false
+    }
+
+    /// Subtitle for typed text: the raw keystrokes (blank hides).
+    /// Pure so the live-typing rule stays unit-tested.
+    nonisolated static func liveSubtitleText(from typed: String) -> String? {
+        typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : typed
+    }
+
+    /// Clears the field, which hides the subtitle via live typing;
+    /// typing again shows it live once more.
+    func clearLiveSubtitle() {
+        liveText = ""
+    }
+
+    /// Live-generated cards show pictures best in a side panel: a
+    /// Bottom layout flips to Left, every other position stays.
+    nonisolated static func liveCardPosition(from current: CardOverlayPosition) -> CardOverlayPosition {
+        current == .bottom ? .left : current
+    }
+
     func removeActiveCards(at offsets: IndexSet) {
         store.removeCards(at: offsets)
         afterDeckContentChanged()
@@ -510,7 +619,9 @@ final class AppViewModel: ObservableObject {
             zoomScale: store.zoomScale(for: store.currentCard?.id),
             commandWindowRemaining: detectionPaused ? nil : commandWindowRemaining,
             cardNumber: store.currentCard == nil ? nil : store.currentIndex + 1,
-            cardCount: store.cards.count
+            cardCount: store.cards.count,
+            subtitle: liveSubtitle,
+            subtitleStyle: subtitleStyle
         ))
     }
 

@@ -5,6 +5,9 @@
 > Everything below shipped on branch `visual-pedagogy` (Builds 46–82)
 > and merged. Earlier milestones tagged `virtual-camera-works`,
 > `virtual-camera-build-45`, `visual-pedagogy-build-71/76/82`.
+> Build 83 (Live Card composer + split layout + live subtitles) is
+> UNMERGED on branch `live-generation` — see the §4 tail and the
+> marked notes; judge it as in-progress, not shipped.
 > The judging ask is at the bottom.
 
 ## 1. What this is
@@ -146,7 +149,7 @@ command window, so normal signing never triggers actions.
 - Accessibility UI: large text, contrast, VoiceOver labels, visible
   status; no sound dependence. Mouse/keyboard actions always work.
 
-## 4. Recent work (Builds 36–82)
+## 4. Recent work (Builds 36–83)
 
 - 36–40: extension target, provisioning (team X8YHS47G23), activation,
   sink discovery hardening, stable device/stream UUIDs, diagnostics.
@@ -240,18 +243,33 @@ command window, so normal signing never triggers actions.
   toggle (2 tests). 81: duplicate AI-deck menus merged into one.
   82: output labels renamed (Program Monitor, Fullscreen Window,
   Open/Close Window).
-- Test count grew 179 → 365 across these builds, suite green throughout
+- 83 (UNMERGED, branch `live-generation`): Live Card composer under
+  the Presentation panel — prompt → single-card plan
+  (`planSingleCard`, strict 1-card schema) + one illustration,
+  text/picture/both modes, 6 art-style presets, Return generates;
+  generated cards append + show live (Bottom flips to Left);
+  multi-line live typing renders as a transient subtitle overlay
+  (dynamic height, lifts above bottom cards, sits beside side
+  cards, adjustable size/colors, deck untouched). Split Text +
+  Picture position: subtitle text strip + side picture panel
+  (aspect-cover art, aspect-fit diagrams, textless cards go
+  full-height panel with no strip); side presets also cover
+  non-diagram art. Paint clips to both split halves. 38 new tests.
+- Test count grew 179 → 403 across these builds, suite green throughout
   (`xcodebuild test`), staged apps deep-codesign-verified.
 
 ## 5. Verification status (as claimed)
 
-- Automated: 365/365 XCTest green — classifier geometry, thresholds,
+- Automated: 403/403 XCTest green (365 on `main`, +38 on branch
+  `live-generation`) — classifier geometry, thresholds,
   stabilization, cooldown/debounce, stillness gating, mapping, card
   transitions, paint/brush/fade math, brush toggle, brush
   shape-snapping, adaptive
   halo (deterministic fixtures; trigger/polarity/linger matrix),
   mouse brush lifecycle + monitor mapping (crop/mirror/clamp),
-  compositing, layout/fit helpers, title wrapping, virtual-camera
+  compositing, layout/fit helpers, title wrapping, split/side
+  cover geometry + subtitle overlay geometry/renders, live-card
+  composer + single-card schema + art presets, virtual-camera
   service/scaler, AI client/importer/diagrams/generator/round-trip/
   fidelity/provenance, PPTX extraction (embedded fixture), PPTX/PDF
   image extraction (hand-built fixtures, pixel-exact asserts), PDF
@@ -269,6 +287,10 @@ command window, so normal signing never triggers actions.
   1280×720 frames reviewed for readability (no clipping, full text,
   banner clears the signing area) plus 320px small-tile simulation.
   This review caught the Build 51 diagram-band defect (fixed).
+- Build 83 gate ST-17 (live composer + subtitles) and ST-18 (split
+  layout) are written but UNVERIFIED — unticked boxes on branch
+  `live-generation`; no automated test substitutes for the user's
+  on-camera run.
 - Faithful-mode live check (real API, exact Build 57 prompt): 3/3
   cards verbatim from slide-style source, empty art prompts, null
   diagrams. Full in-app faithful run covered by flow P (user-checked).
@@ -306,8 +328,10 @@ command window, so normal signing never triggers actions.
 - Motion-gesture triggers deliberately NOT implemented (signing is
   motion; still-holds only) — parked by user decision.
 - Split-view presentation layout (picture tile + text band together)
-  proposed and assessed, parked in `docs/PENDING-FEATURES.md` awaiting
-  user approval — NOT implemented.
+  was parked in `docs/PENDING-FEATURES.md`, then IMPLEMENTED as the
+  Split Text + Picture position in Build 83 (UNMERGED branch
+  `live-generation`, ST-18 unverified) — judge §6's parked note as
+  superseded on that branch only.
 - Mouse brush (Build 74) parked in `docs/PENDING-FEATURES.md` as a
   future feature: implemented and unit-tested but never verified
   on-site (no crosshair; cause undetermined). The code is inert in

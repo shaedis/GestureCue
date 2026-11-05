@@ -35,6 +35,11 @@ protocol GenerationService: Sendable {
     /// separately from the source and never overrides accuracy,
     /// explicit settings, or safety rules.
     func planLesson(source: String, settings: GenerationSettings, fidelity: Fidelity, instructions: String) async throws -> LessonPlan
+    /// Plans exactly one card from a live presenter prompt (same
+    /// approval gate as planning: pressing Generate transmits the
+    /// prompt). The card fits the video limits (220-char body, 40-char
+    /// title) so it can show on the feed immediately.
+    func planSingleCard(topic: String, settings: GenerationSettings) async throws -> PlannedCard
     /// Suggests a catalog collection for a source excerpt.
     /// Same approval gate as planning: it transmits source text.
     func suggestCollection(title: String, excerpt: String, collections: [String]) async throws -> String
@@ -84,6 +89,23 @@ struct MetaModelClient: GenerationService, Sendable {
             timeout: Self.planTimeout
         )
         return try Self.decodePlan(from: content)
+    }
+
+    func planSingleCard(topic: String, settings: GenerationSettings) async throws -> PlannedCard {
+        guard !apiKey.isEmpty else { throw GenerationError.missingAPIKey }
+        let content = try await chatContent(
+            system: Self.singleCardPrompt(settings: settings),
+            user: topic,
+            temperature: 0.3,
+            schemaName: "singleCard",
+            schema: Self.planSchema(cardCount: 1),
+            timeout: Self.planTimeout
+        )
+        let plan = try Self.decodePlan(from: content)
+        guard let first = plan.cards.first else {
+            throw GenerationError.invalidResponse("The model returned no card")
+        }
+        return first
     }
 
     func suggestCollection(title: String, excerpt: String, collections: [String]) async throws -> String {
@@ -228,6 +250,38 @@ struct MetaModelClient: GenerationService, Sendable {
             Reply with JSON only, no markdown fences, matching this shape:
             \(promptShape)
             """
+    }
+
+    /// System prompt for one live card: same audience/style/fit rules
+    /// as lesson planning, but the user text is the topic (not source
+    /// to split) and exactly one card comes back.
+    static func singleCardPrompt(settings: GenerationSettings) -> String {
+        """
+        You are GestureCue's live card writer \
+        for this audience: \(settings.audienceDescription) \
+        Level: \(settings.levelDescription) Subject: \(settings.subject.displayName). \
+        Subject guidance: \(settings.subject.promptHint) \
+        Visual style: \(settings.style.promptHint) Language: \(settings.language). \
+        Text amount: \(settings.textAmount.promptHint) \
+        Write exactly ONE card for a 16:9 video composition from the presenter's live prompt.
+
+        Rules:
+        - The prompt names the topic: write one clear card about it. Never \
+        invent facts, dates, or quotations.
+        - Fit the video card: body at most 220 characters (about 4 short \
+        lines); title at most 40 characters; at most 4 labels, each at most \
+        3 words.
+        - The body must stand alone: open with the core point in one sentence.
+        - Illustration prompt: one clear scene with large shapes, readable \
+        when small; nothing essential near the edges; scenes only, no \
+        readable text.
+        - For exact content (fractions, coordinates, timelines, equations), \
+        emit a diagram spec; never rely on generated image pixels for labels \
+        or numbers.
+        - imageRefs is always [] (a live prompt carries no source images).
+        Reply with JSON only, no markdown fences, matching this shape:
+        \(promptShape)
+        """
     }
 
     private static func promptIntro(settings: GenerationSettings, fidelity: Fidelity) -> String {

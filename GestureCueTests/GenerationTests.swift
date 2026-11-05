@@ -1637,6 +1637,7 @@ private final class MockService: GenerationService, @unchecked Sendable {
     var plan: LessonPlan
     var imageData: Data
     var imagePrompts: [String] = []
+    var imageStyles: [String] = []
     var planError: Error?
     var planFidelity: Fidelity?
     var planInstructions: String?
@@ -1653,8 +1654,21 @@ private final class MockService: GenerationService, @unchecked Sendable {
         return plan
     }
 
+    var singleCard: PlannedCard?
+    var singleCardError: Error?
+
+    func planSingleCard(topic: String, settings: GenerationSettings) async throws -> PlannedCard {
+        if let singleCardError { throw singleCardError }
+        if let singleCard { return singleCard }
+        guard let first = plan.cards.first else {
+            throw GenerationError.invalidResponse("The model returned no card")
+        }
+        return first
+    }
+
     func generateImage(prompt: String, style: String) async throws -> Data {
         imagePrompts.append(prompt)
+        imageStyles.append(style)
         return imageData
     }
 
@@ -1800,5 +1814,141 @@ final class LessonGeneratorTests: XCTestCase {
         } catch {
             XCTFail("wrong error: \(error)")
         }
+    }
+}
+
+final class LiveCardComposerTests: XCTestCase {
+    private func planned(
+        title: String = "Sky",
+        body: String = "Blue light scatters most.",
+        illustrationPrompt: String = "Blue sky over hills",
+        diagram: DiagramSpec? = nil
+    ) -> PlannedCard {
+        PlannedCard(
+            title: title, concept: "Scattering", body: body,
+            illustrationPrompt: illustrationPrompt, diagram: diagram
+        )
+    }
+
+    private func service(singleCard: PlannedCard? = nil) throws -> MockService {
+        let art = try XCTUnwrap(tinyPNG())
+        let service = MockService(plan: LessonPlan(lessonTitle: "L", cards: []), imageData: art)
+        service.singleCard = singleCard ?? planned()
+        return service
+    }
+
+    func testTextAndPictureMapsTextAndGeneratesArt() async throws {
+        let service = try service()
+        let card = try await LiveCardComposer(service: service).generate(
+            prompt: "why is the sky blue", mode: .textAndPicture, settings: GenerationSettings()
+        )
+        XCTAssertEqual(card.title, "Sky")
+        XCTAssertTrue(card.message.hasPrefix("Blue light scatters most."))
+        XCTAssertNotNil(card.imageData)
+        XCTAssertEqual(card.illustrationPrompt, "Blue sky over hills")
+        XCTAssertEqual(service.imagePrompts, ["Blue sky over hills"])
+    }
+
+    func testTextOnlySkipsImageAPI() async throws {
+        let service = try service()
+        let card = try await LiveCardComposer(service: service).generate(
+            prompt: "why is the sky blue", mode: .textOnly, settings: GenerationSettings()
+        )
+        XCTAssertEqual(card.title, "Sky")
+        XCTAssertNil(card.imageData)
+        XCTAssertTrue(service.imagePrompts.isEmpty)
+    }
+
+    func testPictureOnlyUsesPromptAsArtPrompt() async throws {
+        let service = try service()
+        let card = try await LiveCardComposer(service: service).generate(
+            prompt: "a red boat", mode: .pictureOnly, settings: GenerationSettings()
+        )
+        XCTAssertEqual(card.title, "", "no prompt text on a picture-only card")
+        XCTAssertEqual(card.message, "")
+        XCTAssertEqual(card.illustrationPrompt, "a red boat")
+        XCTAssertNotNil(card.imageData)
+        XCTAssertNotNil(card.originalImageData)
+        XCTAssertEqual(service.imagePrompts, ["a red boat"])
+    }
+
+    func testDiagramPreferredOverImageAPI() async throws {
+        let service = try service(singleCard: planned(
+            illustrationPrompt: "P", diagram: DiagramSpec(kind: "fractionCircle", numbers: [1, 2], labels: ["1/2"])
+        ))
+        let card = try await LiveCardComposer(service: service).generate(
+            prompt: "half", mode: .textAndPicture, settings: GenerationSettings()
+        )
+        XCTAssertNotNil(card.imageData)
+        XCTAssertEqual(card.diagramKind, "fractionCircle")
+        XCTAssertTrue(service.imagePrompts.isEmpty)
+    }
+
+    func testEmptyIllustrationPromptStaysTextOnly() async throws {
+        let service = try service(singleCard: planned(illustrationPrompt: "  "))
+        let card = try await LiveCardComposer(service: service).generate(
+            prompt: "quiet", mode: .textAndPicture, settings: GenerationSettings()
+        )
+        XCTAssertNil(card.imageData)
+        XCTAssertTrue(service.imagePrompts.isEmpty)
+    }
+
+    func testEmptyPromptThrows() async throws {
+        let service = try service()
+        do {
+            _ = try await LiveCardComposer(service: service).generate(
+                prompt: "  ", mode: .textOnly, settings: GenerationSettings()
+            )
+            XCTFail("expected invalidResponse")
+        } catch let error as GenerationError {
+            XCTAssertEqual(error, .invalidResponse("Empty live prompt"))
+        }
+    }
+
+    func testPlanErrorPropagates() async throws {
+        let service = try service()
+        service.singleCardError = GenerationError.network("down")
+        do {
+            _ = try await LiveCardComposer(service: service).generate(
+                prompt: "x", mode: .textOnly, settings: GenerationSettings()
+            )
+            XCTFail("expected network error")
+        } catch let error as GenerationError {
+            XCTAssertEqual(error, .network("down"))
+        }
+    }
+
+    func testSingleCardPromptContractsOneFittedCard() {
+        let prompt = MetaModelClient.singleCardPrompt(settings: GenerationSettings())
+        XCTAssertTrue(prompt.contains("exactly ONE card"))
+        XCTAssertTrue(prompt.contains("at most 220 characters"))
+        XCTAssertTrue(prompt.contains("at most 40 characters"))
+    }
+
+    func testSingleCardSchemaRequiresExactlyOneCard() {
+        let schema = MetaModelClient.planSchema(cardCount: 1)
+        let properties = schema["properties"] as? [String: Any]
+        let cards = properties?["cards"] as? [String: Any]
+        XCTAssertEqual(cards?["minItems"] as? Int, 1)
+        XCTAssertEqual(cards?["maxItems"] as? Int, 1)
+    }
+
+    func testArtStylePresetsAreDistinctAndVectorIsLegacyDefault() {
+        let names = AIArtStyle.allCases.map(\.displayName)
+        XCTAssertEqual(Set(names).count, names.count, "display names must be distinct")
+        let prompts = AIArtStyle.allCases.map(\.stylePrompt)
+        XCTAssertTrue(prompts.allSatisfy { !$0.isEmpty })
+        XCTAssertEqual(Set(prompts).count, prompts.count, "style prompts must be distinct")
+        XCTAssertEqual(AIArtStyle.vector.stylePrompt, GenerationSettings().illustrationStyle)
+    }
+
+    func testComposerPassesIllustrationStyleToImageCall() async throws {
+        let service = try service()
+        var settings = GenerationSettings()
+        settings.illustrationStyle = AIArtStyle.photorealistic.stylePrompt
+        _ = try await LiveCardComposer(service: service).generate(
+            prompt: "a red boat", mode: .pictureOnly, settings: settings
+        )
+        XCTAssertEqual(service.imageStyles, [AIArtStyle.photorealistic.stylePrompt])
     }
 }

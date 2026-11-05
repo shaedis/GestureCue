@@ -3,7 +3,7 @@ import SwiftUI
 /// Manual build counter, bumped on every restage so testers can confirm
 /// which build is running (plain `open` won't restart a running app).
 enum AppInfo {
-    static let build = 82
+    static let build = 83
 }
 
 @main
@@ -17,8 +17,10 @@ struct GestureCueApp: App {
         // Scene body below would rebuild (and wipe drafts) on every state
         // change in the main window.
         let app = AppViewModel()
+        let studio = StudioViewModel(app: app)
+        app.studio = studio
         _viewModel = StateObject(wrappedValue: app)
-        _studioViewModel = StateObject(wrappedValue: StudioViewModel(app: app))
+        _studioViewModel = StateObject(wrappedValue: studio)
     }
 
     var body: some Scene {

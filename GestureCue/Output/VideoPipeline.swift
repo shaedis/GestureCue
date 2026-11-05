@@ -12,6 +12,10 @@ enum CardOverlayPosition: String, CaseIterable, Codable, Sendable, Hashable {
     /// Video + Card: the whole camera frame aspect-fit into its own tile
     /// beside the card panel — nothing is ever covered.
     case sideBySide
+    /// Split: the card's texts fill a compact subtitle-like bottom
+    /// strip while its picture fills a side panel above it (no
+    /// overlap). Cards without a picture show the strip alone.
+    case split
 
     var displayName: String {
         switch self {
@@ -19,13 +23,15 @@ enum CardOverlayPosition: String, CaseIterable, Codable, Sendable, Hashable {
         case .left: "Left"
         case .right: "Right"
         case .sideBySide: "Video + Card"
+        case .split: "Split Text + Picture"
         }
     }
 }
 
-/// Card panel placement inside Video + Card mode: the video tile takes
-/// the opposite side (top half for a bottom panel). Only `.sideBySide`
-/// reads it; other positions ignore it.
+/// Card panel placement inside Video + Card mode (the video tile takes
+/// the opposite side; top half for a bottom panel) and Split mode
+/// (the picture side; `.bottom` reads as right there). Other positions
+/// ignore it.
 enum CardPanelPosition: String, CaseIterable, Codable, Sendable, Hashable {
     case left
     case right
@@ -107,6 +113,37 @@ struct ProgramOverlay: Sendable, Equatable {
     /// sees where they are.
     var cardNumber: Int? = nil
     var cardCount: Int = 0
+    /// Transient live subtitle (two-liner typed by the presenter): drawn
+    /// over the feed independently of the card, never persisted.
+    var subtitle: String? = nil
+    /// Subtitle look: user-adjustable size scale + colors.
+    var subtitleStyle = SubtitleStyle()
+}
+
+/// RGBA color: Sendable + Codable so the subtitle style persists as
+/// JSON and crosses to the video queue. Components are 0...1.
+struct SubtitleRGBA: Sendable, Equatable, Codable {
+    var red: Double
+    var green: Double
+    var blue: Double
+    var alpha: Double
+
+    var cgColor: CGColor {
+        CGColor(red: red, green: green, blue: blue, alpha: alpha)
+    }
+}
+
+/// Live subtitle look: size scale on the base size plus text and
+/// background colors. Defaults match the original fixed style (full
+/// size, near-white text, translucent black backdrop).
+struct SubtitleStyle: Sendable, Equatable, Codable {
+    var scale: Double = 1
+    var textColor = SubtitleRGBA(red: 1, green: 1, blue: 1, alpha: 0.95)
+    var backgroundColor = SubtitleRGBA(red: 0, green: 0, blue: 0, alpha: 0.72)
+
+    /// Slider bounds for the size picker.
+    static let minScale = 0.7
+    static let maxScale = 1.6
 }
 
 /// Freehand stroke in normalized video coordinates (origin lower-left).

@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+/// Deck/panel title: picture-only live cards carry no title text, so
+/// rows and VoiceOver label them "Picture" instead of going blank.
+private func displayTitle(_ card: PresentationCard) -> String {
+    card.title.isEmpty ? "Picture" : card.title
+}
+
 /// Large readable presentation card with equivalent mouse and keyboard controls
 /// (Show ↑, Hide Esc, Next →, Expand E) for every gesture action.
 @MainActor
@@ -15,6 +21,8 @@ struct PresentationCardPanelView: View {
                 controls
                 pictureControls
                 positionLine
+                Divider()
+                liveCardSection
             }
         }
         .sheet(isPresented: $viewModel.showingLibrary) {
@@ -73,7 +81,7 @@ struct PresentationCardPanelView: View {
                     .shadow(radius: 6)
             )
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Visible card: \(card.title). \(card.message)")
+            .accessibilityLabel("Visible card: \(displayTitle(card)). \(card.message)")
         } else {
             VStack(spacing: 8) {
                 Image(systemName: "eye.slash")
@@ -169,6 +177,111 @@ struct PresentationCardPanelView: View {
         .foregroundColor(.secondary)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Card \(viewModel.store.positionLabel), \(viewModel.store.isVisible ? "visible" : "hidden")")
+    }
+
+    /// Live composer: generate a card from a prompt (appended to the
+    /// active deck and shown at once, Bottom flips to Left) or type
+    /// a transient subtitle overlay live (deck untouched).
+    private var liveCardSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Live Card")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("Prompt, e.g. why the sky is blue (Return generates, Shift+Return adds a line)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            TextEditor(text: $viewModel.livePrompt)
+                .frame(height: 56)
+                .disabled(viewModel.isLiveGenerating)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.35)))
+                .accessibilityLabel("Live generation prompt")
+                .onKeyPress(.return) {
+                    guard viewModel.canLiveGenerate else { return .ignored }
+                    viewModel.liveGenerate()
+                    return .handled
+                }
+            Picker("Live mode", selection: $viewModel.liveMode) {
+                ForEach(LiveCardMode.allCases, id: \.self) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(viewModel.isLiveGenerating)
+            Picker("Picture style", selection: $viewModel.liveArtStyle) {
+                ForEach(AIArtStyle.allCases, id: \.self) { style in
+                    Text(style.displayName).tag(style)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(viewModel.isLiveGenerating || viewModel.liveMode == .textOnly)
+            HStack {
+                if viewModel.isLiveGenerating {
+                    ProgressView()
+                        .controlSize(.small)
+                    Button("Cancel") { viewModel.cancelLiveGeneration() }
+                } else {
+                    Button("Generate & Show") { viewModel.liveGenerate() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!viewModel.canLiveGenerate)
+                }
+            }
+            if let liveError = viewModel.liveError {
+                Text(liveError)
+                    .font(.callout)
+                    .foregroundColor(.red)
+            }
+            Text("Generate sends this prompt to the Meta Model API (key from AI Studio).")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Divider()
+            Text("Type text to show live (Return for a new line)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            TextEditor(text: $viewModel.liveText)
+                .frame(height: 48)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.35)))
+                .accessibilityLabel("Direct live text")
+            HStack {
+                Text("Size")
+                Slider(
+                    value: $viewModel.subtitleStyle.scale,
+                    in: SubtitleStyle.minScale ... SubtitleStyle.maxScale, step: 0.05
+                )
+                .accessibilityLabel("Subtitle size")
+                Text("\(Int(round(viewModel.subtitleStyle.scale * 100)))%")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+                    .frame(minWidth: 44)
+            }
+            HStack {
+                ColorPicker("Text color", selection: subtitleColorBinding(\.textColor), supportsOpacity: true)
+                ColorPicker("Background", selection: subtitleColorBinding(\.backgroundColor), supportsOpacity: true)
+            }
+            if viewModel.liveSubtitle != nil {
+                Button("Clear") { viewModel.clearLiveSubtitle() }
+            }
+            Text("Typing shows live in the video as you type, without touching the deck or the shown card.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    /// Bridges a style color to the ColorPickers (sRGB both ways).
+    private func subtitleColorBinding(_ keyPath: WritableKeyPath<SubtitleStyle, SubtitleRGBA>) -> Binding<Color> {
+        Binding(
+            get: {
+                let rgba = viewModel.subtitleStyle[keyPath: keyPath]
+                return Color(red: rgba.red, green: rgba.green, blue: rgba.blue, opacity: rgba.alpha)
+            },
+            set: { color in
+                guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return }
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                rgb.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                viewModel.subtitleStyle[keyPath: keyPath] = SubtitleRGBA(
+                    red: Double(red), green: Double(green), blue: Double(blue), alpha: Double(alpha)
+                )
+            }
+        )
     }
 
     private var showGestureName: String {
@@ -273,7 +386,7 @@ struct PresentationLibrarySheet: View {
                 List(selection: $selectedCardID) {
                     ForEach(viewModel.store.cards) { card in
                         VStack(alignment: .leading) {
-                            Text(card.title)
+                            Text(displayTitle(card))
                                 .fontWeight(.semibold)
                             Text(card.message)
                                 .font(.caption)

@@ -437,6 +437,17 @@ final class StudioViewModel: ObservableObject {
         }
     }
 
+    /// Generates one live card from a presenter prompt. Each call
+    /// follows an explicit Generate press in the Presentation panel,
+    /// which is the per-transmission approval; the key comes from the
+    /// Keychain and the current Studio settings drive style/audience.
+    func generateLiveCard(prompt: String, mode: LiveCardMode, artStyle: AIArtStyle) async throws -> PresentationCard {
+        guard let service = activeService() else { throw GenerationError.missingAPIKey }
+        var liveSettings = settings
+        liveSettings.illustrationStyle = artStyle.stylePrompt
+        return try await LiveCardComposer(service: service).generate(prompt: prompt, mode: mode, settings: liveSettings)
+    }
+
     func cancelGeneration() {
         task?.cancel()
         suggestTask?.cancel()

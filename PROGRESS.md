@@ -1306,3 +1306,110 @@ also parked). Main keeps setup + QA docs only; branch keeps full
 dev record. Resume: AGENTS.md resume block + this tail; verify with
 make test (unsandboxed) + make app + codesign --verify --deep.
 Pending: user runs VC-05, publishes to GitHub.
+
+## 2026-11-05 — Build 83: Live Card composer + Split layout (branch live-generation)
+
+Two user-requested features, both staged, unmerged by instruction.
+
+Feature 1 — Live Card section at the bottom of the Presentation
+panel: a prompt field + Text + Picture / Text only / Picture only
+picker + Generate & Show (with Cancel), and a direct-text field +
+Add Text & Show. Both append to the active deck, persist, and show
+immediately, replacing whatever is on video. New
+`GenerationService.planSingleCard` (strict 1-card schema, dedicated
+fit-aware prompt) + new `LiveCardComposer` (diagram-first, one
+image call, composed art; picture-only uses the prompt as art
+prompt with an empty message). Approval: each Generate press
+transmits exactly that prompt (labeled in UI); key from Keychain
+via the Studio. 10 new composer tests.
+
+Feature 2 — Split Text + Picture card position: texts fill the
+bottom banner, the picture fills a side panel above it (Picture
+side Left/Right; bottom falls back to right). Render-time split —
+no Studio or deck changes needed, so ALL existing decks display
+split with nothing regenerated. Paint clips to both halves
+(union clip; single-rect path untouched); zoom applies to the
+panel; picture-less cards render byte-identical to Bottom;
+Expand unchanged. 6 new geometry/render tests.
+
+381/381 green, staged, deep-codesign OK. Gate: ST-17 (live) +
+ST-18 (split) added, unticked (user's). Resume: user verifies
+ST-17/18 on Build 83, then commit + push + merge (ask).
+
+## 2026-11-05 — Build 83 follow-up: subtitle strip + live placement (user feedback)
+
+Split text banner was a third of the frame: it is now a
+subtitle-like strip (0.22H, title max 2 lines, message
+shrink-to-fit); Bottom preset untouched. Side picture panel grows
+into the freed room.
+
+Live placement fixes: generated cards flip a Bottom layout to
+Left (pictures land in a side panel; other positions stay), and
+direct typed text no longer becomes a deck card — it shows as a
+transient subtitle overlay (lifted above bottom cards/split
+strips, coexists with side cards), Clear removes it, deck
+untouched. 6 new tests (position flip, subtitle geometry +
+renders). Gate ST-17/18 wording updated.
+
+## 2026-11-05 — Build 83: live typing subtitles (user request)
+
+Typing in the live-text field now mirrors to the video subtitle
+keystroke by keystroke (no Show button; Show removed). Blank text
+hides the overlay; Clear empties the field and typing again shows
+live once more. Rule extracted as pure
+`liveSubtitleText(from:)` + test. 388/388, staged, codesign OK.
+
+## 2026-11-05 — Build 83: picture-only textless + slim live strip (user feedback)
+
+Picture-only live cards no longer take the prompt as title: title
+and message are empty (video shows the picture alone), the prompt
+survives only as illustration metadata, deck rows/VoiceOver label
+them "Picture". Removed the title-truncation test.
+
+Live subtitle overlay moved to its own slim strip (0.13H, centered
+two-liner) instead of sharing the split card strip (0.22H, kept:
+title + message need the room). Lift geometry + render tests
+updated. 387/387, staged, codesign OK.
+
+## 2026-11-05 — Build 83: dynamic subtitle height + panel cover (user feedback)
+
+Live subtitle strip now sizes from the text: one line starts slim
+and the strip grows per line (explicit newlines + wrapping, capped
+at 3; longer text shrinks). Split side panel switched from
+aspect-fit to aspect-fill so art covers the box with no black bars
+(zoom still applies; in-card art still fits uncropped). 3 new
+tests (growth, line count, backdrop growth, cover). 392/392,
+staged, codesign OK.
+
+## 2026-11-05 — Build 83: subtitle styling + side fill + art presets (user feedback)
+
+Subtitle look adjustable in the panel: size slider (70-160%,
+persisted), text + background ColorPickers with opacity
+(persisted JSON). Side panels (left/right) now aspect-fill
+non-diagram art so pictures cover the box; diagrams still fit
+uncropped everywhere (edge labels); split panel follows the same
+rule. Subtitle strip sits beside visible side cards instead of
+covering them. New Picture style dropdown for Live Card
+(vector/photorealistic/animated-3D/watercolor/comic/pencil,
+default = legacy vector string) so weak prompt writers get a
+good look. 401/401, staged, codesign OK.
+
+## 2026-11-05 — Build 83: textless split drops the strip (user screenshot)
+
+Split picture-only cards drew an empty dark text strip under the
+panel, looking like it covered the picture bottom. Textless split
+cards now skip the strip: the panel spans the full height,
+paint clips to the panel alone, subtitles sit beside it. 2 new
+tests. 403/403, staged, codesign OK.
+
+## 2026-11-05 — Session handoff (Build 83, branch live-generation)
+
+Checked in + pushed before quit; merge to main HELD for ST-17/18
+verification. 403/403 green, staged Build 83 deep-verified, tree
+clean after commit. Gate: ST-17/18 unticked (user's on-camera
+run via make reinstall); VC-05 still open; ST-16 parked.
+Docs synced: AGENTS.md live-generation resume block,
+EXTERNAL-REVIEW §4 tail + §5/§6 (marked unmerged),
+PENDING-FEATURES split-view implemented-note, memory handoff.
+Resume: read AGENTS.md resume block + this tail; verify with
+make test (unsandboxed) + make app + codesign --verify --deep.

@@ -277,3 +277,42 @@ file boxes ticked except VC-05 (open) and ST-16 (parked).
   HACKATHON.md) — resolve modify/delete conflicts with `git rm`.
 - Resume: read this file + PROGRESS.md tail; full build history
   (Builds 46–82) lives in PROGRESS.md, not here.
+
+## Branch live-generation (Build 83, 2026-11-05) — RESUME HERE
+
+Branched from `visual-pedagogy` @ 90417f1 for two user-requested
+features; pushed, UNMERGED until the user verifies ST-17/18.
+Do not merge to `main` without an explicit go.
+
+- Feature 1 — Live Card composer (Presentation panel bottom):
+  multi-line prompt + Text + Picture / Text only / Picture only
+  modes + 6 art-style presets (menu) + Generate & Show (Return
+  generates, Shift+Return newlines, Cancel). New
+  `GenerationService.planSingleCard` (strict 1-card schema) +
+  `LiveCardComposer` (diagram-first, one image call, composed
+  art; picture-only cards carry no title/message text). Cards
+  append to the active deck, persist, and show live; a Bottom
+  layout flips to Left. Approval: each Generate press transmits
+  exactly that prompt (labeled); key from Studio Keychain.
+- Feature 2 — Split Text + Picture position + live subtitles:
+  render-time split (no Studio/deck changes) — subtitle text
+  strip + side picture panel (Picture side Left/Right);
+  aspect-cover art in split/side panels, aspect-fit diagrams
+  everywhere; textless split cards go full-height panel, no
+  strip. Live typing renders as a transient subtitle overlay
+  (dynamic height, lifts above bottom cards, sits beside side
+  cards, adjustable size 70–160% + text/background colors with
+  opacity, persisted; deck untouched; Clear hides).
+- State: 403/403 green, staged app Build 83 deep-verified. Gate
+  ST-17/18 written, unticked (user's on-camera run). VC-05 still
+  the only open older box; ST-16 mouse brush still parked.
+- Files: new `GestureCue/AI/LiveCardComposer.swift` (registered
+  in pbxproj); touched MetaModelClient, StudioViewModel,
+  AppViewModel, VideoPipeline, CardOverlayCompositor,
+  CameraPanelView, PresentationCardPanelView, GestureCueApp,
+  both test files.
+- Resume: `make test` (unsandboxed) + `make app` + codesign
+  verify; user runs ST-17/18 via `make reinstall`, then
+  commit + push + merge (ask). Docs: PROGRESS Build 83
+  entries, EXTERNAL-REVIEW §4 tail + §5/§6 notes (marked
+  unmerged), PENDING-FEATURES split-view updated.

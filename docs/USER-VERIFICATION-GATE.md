@@ -9,7 +9,7 @@ what you saw (and any error text), and wait for a fix.
 Setup (once): `cp -R build/GestureCue.app /Applications/GestureCue.app`,
 open the `/Applications` copy, confirm the title says Build 76.
 
-## Part 1 — AI Studio (ST-01..16)
+## Part 1 — AI Studio (ST-01..18)
 
 Key + approval:
 
@@ -76,6 +76,28 @@ Present on video:
       under the cursor (crosshair over the monitor), snaps
       straight/circle like the finger brush, and shows in the Zoom
       tile; works even while listening is off; card switch clears it.
+- [ ] ST-17 Live Card composer (Build 83): with a card showing on
+      video, type a prompt in Live Card → Generate & Show → the new
+      card replaces it live in the program feed and Zoom tile
+      (Text + Picture / Text only / Picture only all work; Cancel
+      stops a slow call; missing key shows the AI Studio hint; a
+      Bottom layout flips to Left so pictures land in a side panel;
+      Picture style dropdown (vector/photorealistic/animated/
+      watercolor/comic/pencil) sets the art look, Return generates).
+      Generated cards append to the active deck (persisted,
+      deletable). Typing in the live-text field shows a two-liner in
+      the video keystroke by keystroke WITHOUT touching the deck or
+      the shown card (lifts above bottom cards, sits beside side
+      cards; size + text/background colors adjustable); Clear hides
+      it and typing again shows live once more.
+- [ ] ST-18 Split Text + Picture layout (Build 83): card position
+      Split → texts fill a compact subtitle-like bottom strip, the
+      picture fills the side panel (Picture side Left/Right flips
+      it); switching from a Video + Card bottom panel falls back to
+      right. A card without a picture shows the strip alone; a
+      card without text (Picture only) shows the panel full-height
+      with no strip at all. Brush/paint strokes land in both halves;
+      Expand still goes fullscreen.
 
 ## Part 2 — Virtual camera (VC-01..07)
 
